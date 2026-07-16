@@ -142,10 +142,19 @@ function App() {
     setMessage("");
   };
 
-  const resetMenus = () => {
-    setMenus(createInitialMenuList());
+  const clearAllMenus = () => {
+    const shouldClear = window.confirm(
+      "등록된 메뉴를 모두 삭제할까요?\n삭제한 메뉴는 복구할 수 없습니다.",
+    );
+
+    if (!shouldClear) {
+      return;
+    }
+
+    setMenus([]);
     setDrawResult(null);
-    setMessage("기본 메뉴로 초기화했습니다.");
+    setNewMenuName("");
+    setMessage("메뉴를 모두 비웠습니다. 새로운 메뉴를 입력해주세요.");
   };
 
   const drawLunch = () => {
@@ -221,11 +230,12 @@ function App() {
               </div>
 
               <button
-                className="text-button"
+                className="text-button text-button--danger"
                 type="button"
-                onClick={resetMenus}
+                onClick={clearAllMenus}
+                disabled={menus.length === 0}
               >
-                기본값으로 초기화
+                메뉴 전체 비우기
               </button>
             </div>
 
@@ -248,6 +258,19 @@ function App() {
             {message && <p className="message">{message}</p>}
 
             <div className="menu-list">
+              {menus.length === 0 && (
+                <div className="empty-menu-list">
+                  <span className="empty-menu-list__icon">＋</span>
+
+                  <strong>등록된 메뉴가 없습니다.</strong>
+
+                  <p>
+                    위 입력창에서 오늘의 점심 후보를
+                    <br />
+                    하나씩 추가해주세요.
+                  </p>
+                </div>
+              )}
               {menus.map((menu, index) => {
                 const isDisabled = menu.weight === 0;
 
