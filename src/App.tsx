@@ -185,9 +185,9 @@ function App() {
           </h1>
 
           <p className="hero__description">
-            결정하기 귀찮은 점심 메뉴,
+            먹고 싶은 정도를 정하고 버튼만 누르세요.
             <br />
-            10번 뽑아서 가장 끈질긴 메뉴로 정합니다.
+            10번 뽑아서 가장 많이 나온 메뉴를 골라드립니다.
           </p>
 
           <div className="hero__summary">
@@ -310,18 +310,18 @@ function App() {
               <div className="empty-result">
                 <div className="empty-result__icon">🍽️</div>
 
-                <p className="empty-result__eyebrow">READY TO PICK</p>
+                <p className="empty-result__eyebrow">준비 완료</p>
 
                 <h2 className="empty-result__title">
-                  점심 메뉴를
+                  오늘 점심을
                   <br />
-                  뽑아보세요
+                  뽑아볼까요?
                 </h2>
 
                 <p className="empty-result__description">
-                  메뉴별 선호도를 설정한 뒤
+                  왼쪽에서 메뉴를 확인한 다음
                   <br />
-                  추첨 버튼을 눌러주세요.
+                  빨간 버튼을 눌러주세요.
                 </p>
               </div>
             ) : (
