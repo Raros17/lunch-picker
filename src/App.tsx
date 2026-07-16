@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import "./App.css";
 
-import { initialMenus } from "./data/initialMenus";
 import { drawLunchMenu } from "./utils/drawLunch";
 import type { LunchDrawResult, LunchMenu } from "./types";
-
+const DEFAULT_MENU_NAME = "아워홈";
 const STORAGE_KEY = "lunch-picker-menus";
-
+const defaultMenu: LunchMenu = {
+  id: "ourhome",
+  name: DEFAULT_MENU_NAME,
+  weight: 1,
+};
 const weightOptions = [
   {
     value: 0,
@@ -31,7 +34,7 @@ const weightOptions = [
 ];
 
 function createInitialMenuList(): LunchMenu[] {
-  return initialMenus.map(menu => ({ ...menu }));
+  return [{ ...defaultMenu }];
 }
 
 function loadMenus(): LunchMenu[] {
