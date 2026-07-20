@@ -884,3 +884,29 @@ button {
   font-weight: 600;
   line-height: 1.6;
 }
+
+.winner-card__description {
+  position: relative;
+  z-index: 1;
+  display: block;
+  max-width: 75%;
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.55;
+  word-break: keep-all;
+}
+
+.default-menu-badge {
+  display: inline-flex;
+  min-width: 34px;
+  height: 26px;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--text);
+  border-radius: 999px;
+  color: var(--text);
+  background: var(--yellow);
+  font-size: 10px;
+  font-weight: 900;
+}

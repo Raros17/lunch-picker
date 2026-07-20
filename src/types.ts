@@ -2,6 +2,7 @@ export type LunchMenu = {
   id: string;
   name: string;
   weight: number;
+  isDefault?: boolean;
 };
 
 export type LunchDrawResult = {
@@ -12,3 +13,11 @@ export type LunchDrawResult = {
   maxCount: number;
   usedMinimumRule: boolean;
 };
+
+export type OurhomeDailyMenu = {
+  menuDate: string;
+  menuText: string;
+  updatedAt: string;
+};
+
+export type OurhomeWeeklyMenus = Record<string, OurhomeDailyMenu>;
