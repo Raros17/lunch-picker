@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import type { LunchMenu, OurhomeDailyMenu, OurhomeWeeklyMenus } from "../types";
 
@@ -145,6 +145,8 @@ function OurhomeMenuCard({
 }: OurhomeMenuCardProps) {
   const weekdays = useMemo(() => getCurrentWeekdays(), []);
 
+  const [isWeeklyMenuOpen, setIsWeeklyMenuOpen] = useState(false);
+
   const [isEditing, setIsEditing] = useState(false);
 
   const [isSaving, setIsSaving] = useState(false);
@@ -158,19 +160,33 @@ function OurhomeMenuCard({
     [dailyMenu],
   );
 
+  const createDraftMenus = (): Record<string, string> =>
+    weekdays.reduce<Record<string, string>>((nextDraftMenus, weekday) => {
+      nextDraftMenus[weekday.dateKey] =
+        weeklyMenus[weekday.dateKey]?.menuText ?? "";
+
+      return nextDraftMenus;
+    }, {});
+
+  const openWeeklyMenu = () => {
+    setDraftMenus(createDraftMenus());
+    setInputMessage("");
+    setIsEditing(false);
+    setIsWeeklyMenuOpen(true);
+  };
+
+  const closeWeeklyMenu = () => {
+    if (isSaving) {
+      return;
+    }
+
+    setInputMessage("");
+    setIsEditing(false);
+    setIsWeeklyMenuOpen(false);
+  };
+
   const startEditing = () => {
-    const initialDraftMenus = weekdays.reduce<Record<string, string>>(
-      (nextDraftMenus, weekday) => {
-        nextDraftMenus[weekday.dateKey] =
-          weeklyMenus[weekday.dateKey]?.menuText ?? "";
-
-        return nextDraftMenus;
-      },
-      {},
-    );
-
-    setDraftMenus(initialDraftMenus);
-
+    setDraftMenus(createDraftMenus());
     setInputMessage("");
     setIsEditing(true);
   };
@@ -180,6 +196,7 @@ function OurhomeMenuCard({
       return;
     }
 
+    setDraftMenus(createDraftMenus());
     setInputMessage("");
     setIsEditing(false);
   };
@@ -218,192 +235,288 @@ function OurhomeMenuCard({
     }
   };
 
+  useEffect(() => {
+    if (!isWeeklyMenuOpen) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !isSaving) {
+        closeWeeklyMenu();
+      }
+    };
+
+    document.body.style.overflow = "hidden";
+
+    window.addEventListener("keydown", handleEscapeKey);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+
+      window.removeEventListener("keydown", handleEscapeKey);
+    };
+  }, [isSaving, isWeeklyMenuOpen]);
+
   return (
-    <article className="ourhome-card">
-      <div className="ourhome-card__header">
-        <div className="ourhome-card__brand">
-          <span className="ourhome-card__emoji">🥗</span>
+    <>
+      <article className="ourhome-card">
+        <div className="ourhome-card__header">
+          <div className="ourhome-card__brand">
+            <span className="ourhome-card__emoji">🥗</span>
 
-          <div>
-            <div className="ourhome-card__name-row">
-              <strong className="ourhome-card__name">아워홈</strong>
+            <div>
+              <div className="ourhome-card__name-row">
+                <strong className="ourhome-card__name">아워홈</strong>
 
-              <span className="ourhome-card__default-badge">기본 후보</span>
+                <span className="ourhome-card__default-badge">기본 후보</span>
+              </div>
+
+              <span className="ourhome-card__date">
+                {getTodayDisplayText()}
+              </span>
             </div>
-
-            <span className="ourhome-card__date">{getTodayDisplayText()}</span>
           </div>
+
+          <select
+            className="ourhome-card__weight-select"
+            value={menu.weight}
+            onChange={event => onWeightChange(Number(event.target.value))}
+            aria-label="아워홈 가중치"
+          >
+            {weightOptions.map(option => (
+              <option value={option.value} key={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </div>
 
-        <select
-          className="ourhome-card__weight-select"
-          value={menu.weight}
-          onChange={event => onWeightChange(Number(event.target.value))}
-          aria-label="아워홈 가중치"
-        >
-          {weightOptions.map(option => (
-            <option value={option.value} key={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </div>
+        {dailyMenu ? (
+          <div className="ourhome-menu">
+            <div className="ourhome-menu__heading">
+              <div>
+                <span className="ourhome-menu__eyebrow">TODAY&apos;S MENU</span>
 
-      {isEditing ? (
-        <div className="ourhome-editor">
-          <div className="ourhome-menu__heading">
-            <div>
-              <span className="ourhome-menu__eyebrow">WEEKLY MENU</span>
+                <h3 className="ourhome-menu__title">오늘의 점심</h3>
+              </div>
 
-              <h3 className="ourhome-menu__title">이번 주 아워홈 식단</h3>
+              <button
+                className="ourhome-menu__edit-button"
+                type="button"
+                onClick={openWeeklyMenu}
+              >
+                이번 주는?
+              </button>
             </div>
-          </div>
 
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "12px",
-              marginTop: "16px",
-            }}
-          >
-            {weekdays.map(weekday => (
-              <label
-                key={weekday.dateKey}
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "64px minmax(0, 1fr)",
-                  alignItems: "center",
-                  gap: "10px",
+            <div className="ourhome-menu__items">
+              {menuItems.map((menuItem, index) => (
+                <span
+                  className="ourhome-menu__item"
+                  key={`${menuItem}-${index}`}
+                >
+                  {menuItem}
+                </span>
+              ))}
+            </div>
+
+            <div className="ourhome-menu__footer">
+              <span>{getUpdatedTimeText(dailyMenu.updatedAt)} 수정됨</span>
+
+              <button
+                className="ourhome-menu__clear-button"
+                type="button"
+                onClick={() => {
+                  void onClearDailyMenu();
                 }}
               >
-                <span
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    minHeight: "64px",
-                    border: "2px solid var(--text)",
-                    borderRadius: "12px",
-                    background: "var(--yellow)",
-                    fontWeight: 900,
-                  }}
-                >
-                  <strong>{weekday.weekdayText}</strong>
-
-                  <small>{weekday.dateText}</small>
-                </span>
-
-                <textarea
-                  className="ourhome-editor__textarea"
-                  value={draftMenus[weekday.dateKey] ?? ""}
-                  onChange={event =>
-                    updateDraftMenu(weekday.dateKey, event.target.value)
-                  }
-                  placeholder="예: 제육볶음, 된장국, 계란말이"
-                  maxLength={300}
-                  rows={2}
-                  disabled={isSaving}
-                  style={{
-                    minHeight: "64px",
-                  }}
-                />
-              </label>
-            ))}
+                오늘 식단 비우기
+              </button>
+            </div>
           </div>
+        ) : (
+          <div className="ourhome-empty">
+            <div className="ourhome-empty__icon">🍚</div>
 
-          <div className="ourhome-editor__guide">
-            메뉴를 쉼표 또는 줄바꿈으로 구분해주세요. 비워둔 날짜는 기존 식단이
-            삭제됩니다.
-          </div>
+            <div className="ourhome-empty__content">
+              <strong>오늘 식단이 아직 없어요</strong>
 
-          {inputMessage && (
-            <p className="ourhome-editor__message">{inputMessage}</p>
-          )}
-
-          <div className="ourhome-editor__actions">
-            <button
-              className="ourhome-editor__cancel-button"
-              type="button"
-              onClick={cancelEditing}
-              disabled={isSaving}
-            >
-              취소
-            </button>
-
-            <button
-              className="ourhome-editor__save-button"
-              type="button"
-              onClick={() => {
-                void saveMenus();
-              }}
-              disabled={isSaving}
-            >
-              {isSaving ? "저장 중..." : "이번 주 식단 저장"}
-            </button>
-          </div>
-        </div>
-      ) : dailyMenu ? (
-        <div className="ourhome-menu">
-          <div className="ourhome-menu__heading">
-            <div>
-              <span className="ourhome-menu__eyebrow">TODAY&apos;S MENU</span>
-
-              <h3 className="ourhome-menu__title">오늘의 점심</h3>
+              <p>이번 주 식단을 확인하거나 등록해주세요.</p>
             </div>
 
             <button
-              className="ourhome-menu__edit-button"
+              className="ourhome-empty__button"
               type="button"
-              onClick={startEditing}
+              onClick={openWeeklyMenu}
             >
               이번 주는?
             </button>
           </div>
+        )}
+      </article>
 
-          <div className="ourhome-menu__items">
-            {menuItems.map((menuItem, index) => (
-              <span className="ourhome-menu__item" key={`${menuItem}-${index}`}>
-                {menuItem}
-              </span>
-            ))}
-          </div>
-
-          <div className="ourhome-menu__footer">
-            <span>{getUpdatedTimeText(dailyMenu.updatedAt)} 수정됨</span>
-
-            <button
-              className="ourhome-menu__clear-button"
-              type="button"
-              onClick={() => {
-                void onClearDailyMenu();
-              }}
-            >
-              오늘 식단 비우기
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="ourhome-empty">
-          <div className="ourhome-empty__icon">🍚</div>
-
-          <div className="ourhome-empty__content">
-            <strong>오늘 식단이 아직 없어요</strong>
-
-            <p>이번 주 식단을 등록해주세요.</p>
-          </div>
-
-          <button
-            className="ourhome-empty__button"
-            type="button"
-            onClick={startEditing}
+      {isWeeklyMenuOpen && (
+        <div
+          className="weekly-menu-modal"
+          role="presentation"
+          onMouseDown={event => {
+            if (event.target === event.currentTarget && !isSaving) {
+              closeWeeklyMenu();
+            }
+          }}
+        >
+          <section
+            className="weekly-menu-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="weekly-menu-title"
           >
-            이번 주 식단 등록
-          </button>
+            <header className="weekly-menu-dialog__header">
+              <div>
+                <span className="weekly-menu-dialog__eyebrow">
+                  OURHOME WEEKLY MENU
+                </span>
+
+                <h2 id="weekly-menu-title">이번 주 아워홈 메뉴</h2>
+
+                <p>월요일부터 금요일까지 한눈에 확인할 수 있어요.</p>
+              </div>
+
+              <button
+                className="weekly-menu-dialog__close"
+                type="button"
+                onClick={closeWeeklyMenu}
+                aria-label="창 닫기"
+                disabled={isSaving}
+              >
+                ×
+              </button>
+            </header>
+
+            {isEditing ? (
+              <>
+                <div className="weekly-menu-edit-list">
+                  {weekdays.map(weekday => (
+                    <label
+                      className="weekly-menu-edit-row"
+                      key={weekday.dateKey}
+                    >
+                      <span className="weekly-menu-edit-row__date">
+                        <strong>{weekday.weekdayText}</strong>
+
+                        <small>{weekday.dateText}</small>
+                      </span>
+
+                      <textarea
+                        className="weekly-menu-edit-row__textarea"
+                        value={draftMenus[weekday.dateKey] ?? ""}
+                        onChange={event =>
+                          updateDraftMenu(weekday.dateKey, event.target.value)
+                        }
+                        placeholder="예: 제육볶음, 된장국, 계란말이"
+                        maxLength={300}
+                        rows={2}
+                        disabled={isSaving}
+                      />
+                    </label>
+                  ))}
+                </div>
+
+                <p className="weekly-menu-dialog__guide">
+                  쉼표, 가운데점 또는 줄바꿈으로 메뉴를 구분해주세요. 비워둔
+                  날짜는 기존 식단이 삭제됩니다.
+                </p>
+
+                {inputMessage && (
+                  <p className="weekly-menu-dialog__message">{inputMessage}</p>
+                )}
+
+                <footer className="weekly-menu-dialog__footer">
+                  <button
+                    className="weekly-menu-dialog__secondary-button"
+                    type="button"
+                    onClick={cancelEditing}
+                    disabled={isSaving}
+                  >
+                    편집 취소
+                  </button>
+
+                  <button
+                    className="weekly-menu-dialog__primary-button"
+                    type="button"
+                    onClick={() => {
+                      void saveMenus();
+                    }}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? "저장 중..." : "변경사항 저장"}
+                  </button>
+                </footer>
+              </>
+            ) : (
+              <>
+                <div className="weekly-menu-view-list">
+                  {weekdays.map(weekday => {
+                    const menuText =
+                      weeklyMenus[weekday.dateKey]?.menuText.trim() ?? "";
+
+                    return (
+                      <article
+                        className="weekly-menu-view-row"
+                        key={weekday.dateKey}
+                      >
+                        <div className="weekly-menu-view-row__date">
+                          <strong>{weekday.weekdayText}</strong>
+
+                          <span>{weekday.dateText}</span>
+                        </div>
+
+                        <div className="weekly-menu-view-row__content">
+                          {menuText ? (
+                            splitMenuItems(menuText).map((menuItem, index) => (
+                              <span
+                                className="weekly-menu-view-row__item"
+                                key={`${menuItem}-${index}`}
+                              >
+                                {menuItem}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="weekly-menu-view-row__empty">
+                              등록된 식단이 없습니다.
+                            </span>
+                          )}
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+
+                <footer className="weekly-menu-dialog__footer">
+                  <button
+                    className="weekly-menu-dialog__secondary-button"
+                    type="button"
+                    onClick={closeWeeklyMenu}
+                  >
+                    닫기
+                  </button>
+
+                  <button
+                    className="weekly-menu-dialog__primary-button"
+                    type="button"
+                    onClick={startEditing}
+                  >
+                    편집
+                  </button>
+                </footer>
+              </>
+            )}
+          </section>
         </div>
       )}
-    </article>
+    </>
   );
 }
 

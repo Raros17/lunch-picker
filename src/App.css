@@ -910,3 +910,200 @@ button {
   font-size: 10px;
   font-weight: 900;
 }
+
+/* =========================================================
+   추첨 확정 버튼
+========================================================= */
+
+.confirm-eaten-button {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 14px;
+  border: 2px solid var(--text);
+  border-radius: 14px;
+  color: #ffffff;
+  background: var(--blue);
+  box-shadow: 4px 4px 0 var(--text);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.confirm-eaten-button:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0 var(--text);
+}
+
+.confirm-eaten-button--confirmed {
+  color: var(--text);
+  background: #d9f5e9;
+  box-shadow: none;
+}
+
+.confirm-eaten-button:disabled {
+  cursor: default;
+  opacity: 0.78;
+}
+
+.result-confirm-message {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* =========================================================
+   과거 메뉴 TOP 10
+========================================================= */
+
+.archived-menu-panel {
+  margin-top: 24px;
+}
+
+.archived-menu-panel__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding-bottom: 20px;
+  border-bottom: 2px dashed rgba(24, 35, 58, 0.2);
+}
+
+.archived-menu-panel__eyebrow {
+  margin: 0 0 5px;
+  color: var(--blue);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+}
+
+.archived-menu-panel__title {
+  margin: 0;
+  color: var(--text);
+  font-size: 25px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}
+
+.archived-menu-panel__description {
+  margin: 7px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.6;
+}
+
+.archived-menu-panel__count {
+  display: inline-flex;
+  min-width: 68px;
+  min-height: 34px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  border: 2px solid var(--text);
+  border-radius: 999px;
+  background: var(--yellow);
+  box-shadow: 3px 3px 0 var(--text);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.archived-menu-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.archived-menu-item {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px;
+  border: 2px solid var(--text);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 3px 3px 0 rgba(24, 35, 58, 0.12);
+}
+
+.archived-menu-item__rank {
+  display: inline-flex;
+  width: 42px;
+  height: 42px;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--text);
+  border-radius: 12px;
+  background: #fff2b9;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.archived-menu-item__content {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.archived-menu-item__name {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.archived-menu-item__date {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.archived-menu-item__restore-button {
+  min-height: 38px;
+  padding: 0 12px;
+  border: 2px solid var(--text);
+  border-radius: 11px;
+  color: var(--text);
+  background: #dce7ff;
+  box-shadow: 3px 3px 0 var(--text);
+  font-size: 11px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.archived-menu-item__restore-button:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--text);
+}
+
+.archived-menu-item__restore-button:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
+@media (max-width: 760px) {
+  .archived-menu-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .archived-menu-panel__heading {
+    flex-direction: column;
+  }
+
+  .archived-menu-item {
+    grid-template-columns: 42px minmax(0, 1fr);
+  }
+
+  .archived-menu-item__restore-button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+}

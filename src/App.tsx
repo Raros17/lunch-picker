@@ -60,21 +60,55 @@ function getTodayDateKey(): string {
   return `${datePartMap.year}-${datePartMap.month}-${datePartMap.day}`;
 }
 
+function getRegisteredDateText(createdAt?: string): string {
+  if (!createdAt) {
+    return "이전에 등록한 메뉴";
+  }
+
+  return `${new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+  }).format(new Date(createdAt))} 등록`;
+}
+
 function App() {
   const {
     menus,
+    archivedMenus,
     isLoading,
     errorMessage,
     addMenu: addMenuToDatabase,
     deleteMenu: deleteMenuFromDatabase,
+    restoreMenu: restoreMenuToDatabase,
     updateMenuWeight: updateMenuWeightInDatabase,
     clearNonDefaultMenus,
+    confirmEatenMenu,
   } = useLunchMenus();
+
+  const {
+    weeklyMenus: ourhomeWeeklyMenus,
+    isLoading: isOurhomeLoading,
+    errorMessage: ourhomeErrorMessage,
+    saveWeeklyMenus: saveOurhomeWeeklyMenus,
+    clearMenu: clearOurhomeMenu,
+  } = useOurhomeMenus();
 
   const [newMenuName, setNewMenuName] = useState("");
   const [drawResult, setDrawResult] = useState<LunchDrawResult | null>(null);
   const [message, setMessage] = useState("");
+  const [resultMessage, setResultMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [isConfirmingEaten, setIsConfirmingEaten] = useState(false);
+  const [confirmedDrawMenuId, setConfirmedDrawMenuId] = useState<string | null>(
+    null,
+  );
+  const [restoringMenuId, setRestoringMenuId] = useState<string | null>(null);
+
+  const todayDateKey = getTodayDateKey();
+
+  const ourhomeDailyMenu = ourhomeWeeklyMenus[todayDateKey] ?? null;
 
   const activeMenuCount = useMemo(
     () => menus.filter(menu => menu.weight > 0).length,
@@ -98,6 +132,12 @@ function App() {
       return secondCount - firstCount;
     });
   }, [drawResult, menus]);
+
+  const clearCurrentDraw = () => {
+    setDrawResult(null);
+    setResultMessage("");
+    setConfirmedDrawMenuId(null);
+  };
 
   const addMenu = async (): Promise<void> => {
     const trimmedMenuName = newMenuName.trim();
@@ -123,7 +163,7 @@ function App() {
       await addMenuToDatabase(trimmedMenuName);
 
       setNewMenuName("");
-      setDrawResult(null);
+      clearCurrentDraw();
       setMessage(`${trimmedMenuName} 메뉴를 공유 목록에 추가했습니다.`);
     } catch (error) {
       setMessage(getErrorMessage(error));
@@ -137,17 +177,36 @@ function App() {
     isDefault: boolean,
   ): Promise<void> => {
     if (isDefault) {
-      setMessage("아워홈은 기본 메뉴라서 삭제할 수 없습니다.");
+      setMessage("아워홈은 기본 메뉴라서 숨길 수 없습니다.");
       return;
     }
 
     try {
       await deleteMenuFromDatabase(menuId);
 
-      setDrawResult(null);
-      setMessage("공유 메뉴를 삭제했습니다.");
+      clearCurrentDraw();
+      setMessage("메뉴를 과거 메뉴 목록으로 이동했습니다.");
     } catch (error) {
       setMessage(getErrorMessage(error));
+    }
+  };
+
+  const restoreMenu = async (
+    menuId: string,
+    menuName: string,
+  ): Promise<void> => {
+    try {
+      setRestoringMenuId(menuId);
+      setMessage("");
+
+      await restoreMenuToDatabase(menuId);
+
+      clearCurrentDraw();
+      setMessage(`${menuName} 메뉴를 다시 점심 후보에 추가했습니다.`);
+    } catch (error) {
+      setMessage(getErrorMessage(error));
+    } finally {
+      setRestoringMenuId(null);
     }
   };
 
@@ -158,7 +217,7 @@ function App() {
     try {
       await updateMenuWeightInDatabase(menuId, weight);
 
-      setDrawResult(null);
+      clearCurrentDraw();
       setMessage("");
     } catch (error) {
       setMessage(getErrorMessage(error));
@@ -167,7 +226,7 @@ function App() {
 
   const clearAllMenus = async (): Promise<void> => {
     const shouldClear = window.confirm(
-      "아워홈을 제외한 모든 공유 메뉴를 삭제할까요?",
+      "아워홈을 제외한 모든 공유 메뉴를 과거 메뉴 목록으로 옮길까요?",
     );
 
     if (!shouldClear) {
@@ -177,9 +236,9 @@ function App() {
     try {
       await clearNonDefaultMenus();
 
-      setDrawResult(null);
+      clearCurrentDraw();
       setNewMenuName("");
-      setMessage("아워홈을 제외한 공유 메뉴를 모두 비웠습니다.");
+      setMessage("아워홈을 제외한 메뉴를 모두 과거 메뉴로 옮겼습니다.");
     } catch (error) {
       setMessage(getErrorMessage(error));
     }
@@ -191,7 +250,7 @@ function App() {
     try {
       await saveOurhomeWeeklyMenus(weekMenuTexts);
 
-      setDrawResult(null);
+      clearCurrentDraw();
       setMessage("이번 주 아워홈 식단을 저장했습니다.");
     } catch (error) {
       console.error("아워홈 식단 저장 실패:", error);
@@ -210,7 +269,7 @@ function App() {
     try {
       await clearOurhomeMenu(todayDateKey);
 
-      setDrawResult(null);
+      clearCurrentDraw();
       setMessage("오늘 아워홈 식단을 비웠습니다.");
     } catch (error) {
       setMessage(
@@ -226,9 +285,37 @@ function App() {
       const result = drawLunchMenu(menus, 10, 3);
 
       setDrawResult(result);
+      setConfirmedDrawMenuId(null);
+      setResultMessage("");
       setMessage("");
     } catch (error) {
       setMessage(getErrorMessage(error));
+    }
+  };
+
+  const confirmSelectedMenu = async (): Promise<void> => {
+    if (!drawResult) {
+      return;
+    }
+
+    const selectedMenu = drawResult.selectedMenu;
+
+    if (confirmedDrawMenuId === selectedMenu.id) {
+      return;
+    }
+
+    try {
+      setIsConfirmingEaten(true);
+      setResultMessage("");
+
+      await confirmEatenMenu(selectedMenu.id);
+
+      setConfirmedDrawMenuId(selectedMenu.id);
+      setResultMessage(`${selectedMenu.name}을 오늘 먹은 메뉴로 기록했습니다.`);
+    } catch (error) {
+      setResultMessage(getErrorMessage(error));
+    } finally {
+      setIsConfirmingEaten(false);
     }
   };
 
@@ -239,18 +326,6 @@ function App() {
       void addMenu();
     }
   };
-
-  const {
-    weeklyMenus: ourhomeWeeklyMenus,
-    isLoading: isOurhomeLoading,
-    errorMessage: ourhomeErrorMessage,
-    saveWeeklyMenus: saveOurhomeWeeklyMenus,
-    clearMenu: clearOurhomeMenu,
-  } = useOurhomeMenus();
-
-  const todayDateKey = getTodayDateKey();
-
-  const ourhomeDailyMenu = ourhomeWeeklyMenus[todayDateKey] ?? null;
 
   return (
     <main className="app">
@@ -412,7 +487,7 @@ function App() {
                       onClick={() => {
                         void deleteMenu(menu.id, Boolean(menu.isDefault));
                       }}
-                      aria-label={`${menu.name} 삭제`}
+                      aria-label={`${menu.name} 과거 메뉴로 이동`}
                     >
                       ×
                     </button>
@@ -466,6 +541,32 @@ function App() {
                     10번 중 {drawResult.maxCount}번 당첨
                   </span>
                 </div>
+
+                <button
+                  className={`confirm-eaten-button ${
+                    confirmedDrawMenuId === drawResult.selectedMenu.id
+                      ? "confirm-eaten-button--confirmed"
+                      : ""
+                  }`}
+                  type="button"
+                  onClick={() => {
+                    void confirmSelectedMenu();
+                  }}
+                  disabled={
+                    isConfirmingEaten ||
+                    confirmedDrawMenuId === drawResult.selectedMenu.id
+                  }
+                >
+                  {confirmedDrawMenuId === drawResult.selectedMenu.id
+                    ? "오늘 메뉴로 기록 완료"
+                    : isConfirmingEaten
+                      ? "기록 중..."
+                      : "오늘 이걸로 결정"}
+                </button>
+
+                {resultMessage && (
+                  <p className="result-confirm-message">{resultMessage}</p>
+                )}
 
                 {drawResult.topMenus.length > 1 && (
                   <p className="tie-message">
@@ -526,6 +627,60 @@ function App() {
             )}
           </div>
         </section>
+
+        {archivedMenus.length > 0 && (
+          <section className="panel archived-menu-panel">
+            <div className="archived-menu-panel__heading">
+              <div>
+                <p className="archived-menu-panel__eyebrow">
+                  PREVIOUS MENU TOP 10
+                </p>
+
+                <h2 className="archived-menu-panel__title">다시 먹어볼까요?</h2>
+
+                <p className="archived-menu-panel__description">
+                  현재 후보와 최근 14일 안에 먹은 메뉴는 제외하고, 처음 등록한
+                  순서대로 최대 10개를 보여줘요.
+                </p>
+              </div>
+
+              <span className="archived-menu-panel__count">
+                TOP {archivedMenus.length}
+              </span>
+            </div>
+
+            <div className="archived-menu-list">
+              {archivedMenus.map((menu, index) => (
+                <article className="archived-menu-item" key={menu.id}>
+                  <span className="archived-menu-item__rank">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+
+                  <div className="archived-menu-item__content">
+                    <strong className="archived-menu-item__name">
+                      {menu.name}
+                    </strong>
+
+                    <span className="archived-menu-item__date">
+                      {getRegisteredDateText(menu.createdAt)}
+                    </span>
+                  </div>
+
+                  <button
+                    className="archived-menu-item__restore-button"
+                    type="button"
+                    onClick={() => {
+                      void restoreMenu(menu.id, menu.name);
+                    }}
+                    disabled={restoringMenuId !== null}
+                  >
+                    {restoringMenuId === menu.id ? "추가 중..." : "후보에 추가"}
+                  </button>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
       </section>
     </main>
   );

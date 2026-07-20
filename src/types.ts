@@ -2,9 +2,14 @@ export type LunchMenu = {
   id: string;
   name: string;
   weight: number;
-  isDefault?: boolean;
-};
 
+  isDefault?: boolean;
+  isActive?: boolean;
+
+  lastEatenAt?: string | null;
+  eatenCount?: number;
+  createdAt?: string;
+};
 export type LunchDrawResult = {
   selectedMenu: LunchMenu;
   drawResults: LunchMenu[];
