@@ -336,22 +336,12 @@ export function useLunchMenus(): UseLunchMenusResult {
     async (menuId: string): Promise<void> => {
       await ensureAnonymousSession();
 
-      const selectedMenu = menus.find(menu => menu.id === menuId);
-
-      if (!selectedMenu) {
-        throw new Error("선택한 메뉴를 찾을 수 없습니다.");
-      }
-
-      const nextEatenCount = (selectedMenu.eatenCount ?? 0) + 1;
-
-      const { error } = await supabase
-        .from("lunch_menus")
-        .update({
-          last_eaten_at: new Date().toISOString(),
-
-          eaten_count: nextEatenCount,
-        })
-        .eq("id", menuId);
+      const { error } = await supabase.rpc(
+        "confirm_lunch_and_archive_candidates",
+        {
+          p_menu_id: menuId,
+        },
+      );
 
       if (error) {
         throw error;
@@ -359,7 +349,7 @@ export function useLunchMenus(): UseLunchMenusResult {
 
       await loadMenus();
     },
-    [loadMenus, menus],
+    [loadMenus],
   );
 
   useEffect(() => {

@@ -341,8 +341,13 @@ function App() {
 
       await confirmEatenMenu(selectedMenu.id);
 
-      setConfirmedDrawMenuId(selectedMenu.id);
-      setResultMessage(`${selectedMenu.name}을 오늘 먹은 메뉴로 기록했습니다.`);
+      setDrawResult(null);
+      setConfirmedDrawMenuId(null);
+      setResultMessage("");
+
+      setMessage(
+        `${selectedMenu.name}을 오늘 메뉴로 기록했습니다. 나머지 후보는 과거 메뉴로 옮겼습니다.`,
+      );
     } catch (error) {
       setResultMessage(getErrorMessage(error));
     } finally {
