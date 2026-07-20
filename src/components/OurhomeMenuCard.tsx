@@ -350,7 +350,7 @@ function OurhomeMenuCard({
             <div>
               <span className="ourhome-menu__eyebrow">TODAY&apos;S MENU</span>
 
-              <h3 className="ourhome-menu__title">오늘은 이렇게 나와요</h3>
+              <h3 className="ourhome-menu__title">오늘의 점심</h3>
             </div>
 
             <button
@@ -358,7 +358,7 @@ function OurhomeMenuCard({
               type="button"
               onClick={startEditing}
             >
-              이번 주 식단
+              이번주
             </button>
           </div>
 
