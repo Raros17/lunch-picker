@@ -82,6 +82,7 @@ function App() {
     addMenu: addMenuToDatabase,
     deleteMenu: deleteMenuFromDatabase,
     restoreMenu: restoreMenuToDatabase,
+    deleteArchivedMenu: deleteArchivedMenuFromDatabase,
     updateMenuWeight: updateMenuWeightInDatabase,
     clearNonDefaultMenus,
     confirmEatenMenu,
@@ -105,6 +106,9 @@ function App() {
     null,
   );
   const [restoringMenuId, setRestoringMenuId] = useState<string | null>(null);
+  const [deletingArchivedMenuId, setDeletingArchivedMenuId] = useState<
+    string | null
+  >(null);
 
   const todayDateKey = getTodayDateKey();
 
@@ -207,6 +211,33 @@ function App() {
       setMessage(getErrorMessage(error));
     } finally {
       setRestoringMenuId(null);
+    }
+  };
+
+  const deleteArchivedMenu = async (
+    menuId: string,
+    menuName: string,
+  ): Promise<void> => {
+    const shouldDelete = window.confirm(
+      `${menuName} 메뉴를 과거 목록에서도 완전히 삭제할까요?`,
+    );
+
+    if (!shouldDelete) {
+      return;
+    }
+
+    try {
+      setDeletingArchivedMenuId(menuId);
+      setMessage("");
+
+      await deleteArchivedMenuFromDatabase(menuId);
+
+      clearCurrentDraw();
+      setMessage(`${menuName} 메뉴를 완전히 삭제했습니다.`);
+    } catch (error) {
+      setMessage(getErrorMessage(error));
+    } finally {
+      setDeletingArchivedMenuId(null);
     }
   };
 
@@ -666,16 +697,39 @@ function App() {
                     </span>
                   </div>
 
-                  <button
-                    className="archived-menu-item__restore-button"
-                    type="button"
-                    onClick={() => {
-                      void restoreMenu(menu.id, menu.name);
-                    }}
-                    disabled={restoringMenuId !== null}
-                  >
-                    {restoringMenuId === menu.id ? "추가 중..." : "후보에 추가"}
-                  </button>
+                  <div className="archived-menu-item__actions">
+                    <button
+                      className="archived-menu-item__restore-button"
+                      type="button"
+                      onClick={() => {
+                        void restoreMenu(menu.id, menu.name);
+                      }}
+                      disabled={
+                        restoringMenuId !== null ||
+                        deletingArchivedMenuId !== null
+                      }
+                    >
+                      {restoringMenuId === menu.id
+                        ? "추가 중..."
+                        : "후보에 추가"}
+                    </button>
+
+                    <button
+                      className="archived-menu-item__delete-button"
+                      type="button"
+                      onClick={() => {
+                        void deleteArchivedMenu(menu.id, menu.name);
+                      }}
+                      disabled={
+                        restoringMenuId !== null ||
+                        deletingArchivedMenuId !== null
+                      }
+                      aria-label={`${menu.name} 완전 삭제`}
+                      title="완전 삭제"
+                    >
+                      {deletingArchivedMenuId === menu.id ? "…" : "×"}
+                    </button>
+                  </div>
                 </article>
               ))}
             </div>

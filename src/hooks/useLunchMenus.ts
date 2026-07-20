@@ -24,6 +24,7 @@ type LunchMenuRow = {
 type UseLunchMenusResult = {
   menus: LunchMenu[];
   archivedMenus: LunchMenu[];
+  deleteArchivedMenu: (menuId: string) => Promise<void>;
 
   isLoading: boolean;
   errorMessage: string;
@@ -274,6 +275,23 @@ export function useLunchMenus(): UseLunchMenusResult {
     [loadMenus],
   );
 
+  const deleteArchivedMenu = useCallback(
+    async (menuId: string): Promise<void> => {
+      await ensureAnonymousSession();
+
+      const { error } = await supabase.rpc("delete_archived_lunch_menu", {
+        p_menu_id: menuId,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      await loadMenus();
+    },
+    [loadMenus],
+  );
+
   const updateMenuWeight = useCallback(
     async (menuId: string, weight: number): Promise<void> => {
       await ensureAnonymousSession();
@@ -407,6 +425,7 @@ export function useLunchMenus(): UseLunchMenusResult {
     addMenu,
     deleteMenu,
     restoreMenu,
+    deleteArchivedMenu,
     updateMenuWeight,
     clearNonDefaultMenus,
     confirmEatenMenu,

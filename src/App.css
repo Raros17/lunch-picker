@@ -1107,3 +1107,48 @@ button {
     width: 100%;
   }
 }
+/* 과거 메뉴 오른쪽 버튼 묶음 */
+.archived-menu-item__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.archived-menu-item__delete-button {
+  width: 38px;
+  height: 38px;
+  flex: none;
+  padding: 0;
+  border: 2px solid var(--text);
+  border-radius: 11px;
+  color: var(--text);
+  background: #ffdce4;
+  box-shadow: 3px 3px 0 var(--text);
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.archived-menu-item__delete-button:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  background: #ffbdca;
+  box-shadow: 4px 4px 0 var(--text);
+}
+
+.archived-menu-item__delete-button:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
+@media (max-width: 480px) {
+  .archived-menu-item__actions {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .archived-menu-item__restore-button {
+    width: 100%;
+    flex: 1;
+  }
+}
