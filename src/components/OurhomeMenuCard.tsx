@@ -358,7 +358,7 @@ function OurhomeMenuCard({
               type="button"
               onClick={startEditing}
             >
-              이번주
+              이번 주는?
             </button>
           </div>
 
