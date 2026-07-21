@@ -1,6 +1,13 @@
 import { useState } from "react";
 
+import type { KeyboardEvent } from "react";
+
+import RestaurantCommentsButton from "./RestaurantCommentsButton";
+
+import { loadRestaurantCommentCounts } from "../lib/restaurantComments";
+
 const OFFICE_ADDRESS = "서울특별시 강남구 역삼로7길 5";
+
 const SEARCH_RADIUS_TEXT = "3km";
 
 export type NearbyRestaurant = {
@@ -35,16 +42,38 @@ function getDistanceText(distanceMeters: number): string {
   return `${(distanceMeters / 1000).toFixed(1)}km`;
 }
 
+function getErrorMessage(error: unknown): string {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof error.message === "string"
+  ) {
+    return error.message;
+  }
+
+  return "근처 식당 검색에 실패했습니다.";
+}
+
 export default function NearbyRestaurantSearch({
   onAddRestaurant,
 }: NearbyRestaurantSearchProps) {
   const [query, setQuery] = useState("");
+
   const [restaurants, setRestaurants] = useState<NearbyRestaurant[]>([]);
+
+  const [commentCounts, setCommentCounts] = useState<Record<string, number>>(
+    {},
+  );
+
   const [isSearching, setIsSearching] = useState(false);
+
   const [addingRestaurantId, setAddingRestaurantId] = useState<string | null>(
     null,
   );
+
   const [hasSearched, setHasSearched] = useState(false);
+
   const [message, setMessage] = useState("");
 
   const searchRestaurants = async (): Promise<void> => {
@@ -52,6 +81,7 @@ export default function NearbyRestaurantSearch({
 
     if (!trimmedQuery) {
       setMessage("찾고 싶은 메뉴를 입력해주세요.");
+
       return;
     }
 
@@ -76,16 +106,26 @@ export default function NearbyRestaurantSearch({
 
       setRestaurants(nextRestaurants);
 
+      try {
+        const nextCommentCounts = await loadRestaurantCommentCounts(
+          nextRestaurants.map((restaurant: NearbyRestaurant) => restaurant.id),
+        );
+
+        setCommentCounts(nextCommentCounts);
+      } catch (commentCountError) {
+        console.error("식당 한줄평 개수 조회 실패:", commentCountError);
+
+        setCommentCounts({});
+      }
+
       if (nextRestaurants.length === 0) {
         setMessage(`${SEARCH_RADIUS_TEXT} 안에서 검색 결과를 찾지 못했습니다.`);
       }
     } catch (error) {
       setRestaurants([]);
-      setMessage(
-        error instanceof Error
-          ? error.message
-          : "근처 식당 검색에 실패했습니다.",
-      );
+      setCommentCounts({});
+
+      setMessage(getErrorMessage(error));
     } finally {
       setIsSearching(false);
     }
@@ -94,6 +134,7 @@ export default function NearbyRestaurantSearch({
   const addRestaurant = async (restaurant: NearbyRestaurant): Promise<void> => {
     try {
       setAddingRestaurantId(restaurant.id);
+
       setMessage("");
 
       await onAddRestaurant(
@@ -114,7 +155,7 @@ export default function NearbyRestaurantSearch({
     }
   };
 
-  const handleQueryKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleQueryKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter" && !isSearching) {
       void searchRestaurants();
     }
@@ -150,7 +191,9 @@ export default function NearbyRestaurantSearch({
           className="restaurant-search-form__input"
           type="search"
           value={query}
-          onChange={event => setQuery(event.target.value)}
+          onChange={event => {
+            setQuery(event.target.value);
+          }}
           onKeyDown={handleQueryKeyDown}
           placeholder="예: 돈가스, 쌀국수, 김치찌개"
           maxLength={30}
@@ -173,7 +216,7 @@ export default function NearbyRestaurantSearch({
 
       {restaurants.length > 0 && (
         <div className="restaurant-search-results">
-          {restaurants.map(restaurant => {
+          {restaurants.map((restaurant: NearbyRestaurant) => {
             const displayAddress = restaurant.roadAddress || restaurant.address;
 
             return (
@@ -205,6 +248,20 @@ export default function NearbyRestaurantSearch({
                 </div>
 
                 <div className="restaurant-search-item__actions">
+                  <RestaurantCommentsButton
+                    kakaoPlaceId={restaurant.id}
+                    placeName={restaurant.name}
+                    commentCount={commentCounts[restaurant.id] ?? 0}
+                    onCommentCountChange={(nextCommentCount: number) => {
+                      setCommentCounts(
+                        (previousCommentCounts: Record<string, number>) => ({
+                          ...previousCommentCounts,
+                          [restaurant.id]: nextCommentCount,
+                        }),
+                      );
+                    }}
+                  />
+
                   <a
                     className="restaurant-search-item__map-link"
                     href={restaurant.placeUrl}
