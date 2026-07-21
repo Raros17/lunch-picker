@@ -32,7 +32,13 @@ async function getOfficeCoordinates(restApiKey) {
   });
 
   if (!addressResponse.ok) {
-    throw new Error("회사 위치를 좌표로 변환하지 못했습니다.");
+    const errorText = await addressResponse.text();
+
+    console.error("카카오 주소 검색 실패:", addressResponse.status, errorText);
+
+    throw new Error(
+      `카카오 주소 검색 실패 (${addressResponse.status}): ${errorText}`,
+    );
   }
 
   const addressBody = await addressResponse.json();
