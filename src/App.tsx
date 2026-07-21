@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 
 import "./App.css";
 
+import NearbyRestaurantSearch from "./components/NearbyRestaurantSearch";
 import OurhomeMenuCard from "./components/OurhomeMenuCard";
 import { useOurhomeMenus } from "./hooks/useOurhomeMenus";
 import { useLunchMenus } from "./hooks/useLunchMenus";
@@ -426,6 +427,13 @@ function App() {
     }
   };
 
+  const addRestaurantToMenu = async (restaurantName: string): Promise<void> => {
+    await addMenuToDatabase(restaurantName);
+
+    clearCurrentDraw();
+    setMessage(`${restaurantName}을 점심 후보에 추가했습니다.`);
+  };
+
   const handleMenuInputKeyDown = (
     event: React.KeyboardEvent<HTMLInputElement>,
   ) => {
@@ -761,6 +769,8 @@ function App() {
             )}
           </div>
         </section>
+
+        <NearbyRestaurantSearch onAddRestaurant={addRestaurantToMenu} />
 
         {archivedMenus.length > 0 && (
           <section className="panel archived-menu-panel">

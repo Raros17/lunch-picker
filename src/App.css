@@ -1263,3 +1263,251 @@ button {
     font-size: 13px;
   }
 }
+
+/* =========================================================
+   회사 근처 식당 검색
+========================================================= */
+
+.restaurant-search-panel {
+  margin-top: 22px;
+}
+
+.restaurant-search-panel__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.restaurant-search-panel__eyebrow {
+  margin: 0 0 5px;
+  color: var(--red);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.restaurant-search-panel__title {
+  margin: 0;
+  color: var(--text);
+  font-size: clamp(24px, 4vw, 34px);
+  font-weight: 950;
+}
+
+.restaurant-search-panel__description {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.restaurant-search-panel__radius {
+  flex: 0 0 auto;
+  padding: 8px 11px;
+  border: 2px solid var(--text);
+  border-radius: 999px;
+  background: var(--yellow);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 900;
+  box-shadow: 3px 3px 0 var(--text);
+}
+
+.restaurant-search-panel__office {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  padding: 12px 14px;
+  border: 2px dashed var(--text);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--text);
+  font-size: 13px;
+}
+
+.restaurant-search-panel__office-label {
+  flex: 0 0 auto;
+  color: var(--red);
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.06em;
+}
+
+.restaurant-search-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.restaurant-search-form__input {
+  min-width: 0;
+  padding: 14px 16px;
+  border: 2px solid var(--text);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+  font-weight: 800;
+  outline: none;
+}
+
+.restaurant-search-form__input:focus {
+  box-shadow: 4px 4px 0 var(--yellow);
+}
+
+.restaurant-search-form__button {
+  padding: 0 18px;
+  border: 2px solid var(--text);
+  border-radius: 14px;
+  background: var(--red);
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 950;
+  box-shadow: 4px 4px 0 var(--text);
+  cursor: pointer;
+}
+
+.restaurant-search-form__button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.restaurant-search-panel__message,
+.restaurant-search-panel__empty {
+  margin: 14px 0 0;
+  color: var(--red);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.restaurant-search-results {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.restaurant-search-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 15px;
+  border: 2px solid var(--text);
+  border-radius: 15px;
+  background: #fff;
+  box-shadow: 3px 3px 0 rgba(31, 31, 31, 0.14);
+}
+
+.restaurant-search-item__main {
+  min-width: 0;
+}
+
+.restaurant-search-item__title-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.restaurant-search-item__name {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.restaurant-search-item__distance {
+  flex: 0 0 auto;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: var(--yellow);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.restaurant-search-item__category,
+.restaurant-search-item__address,
+.restaurant-search-item__phone {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.restaurant-search-item__category {
+  color: var(--red);
+}
+
+.restaurant-search-item__actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.restaurant-search-item__map-link,
+.restaurant-search-item__add-button {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  border: 2px solid var(--text);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 950;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.restaurant-search-item__map-link {
+  background: #fff;
+  color: var(--text);
+}
+
+.restaurant-search-item__add-button {
+  background: var(--yellow);
+  color: var(--text);
+}
+
+.restaurant-search-item__add-button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+@media (max-width: 680px) {
+  .restaurant-search-panel__heading,
+  .restaurant-search-item {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .restaurant-search-panel__radius {
+    align-self: flex-start;
+  }
+
+  .restaurant-search-form {
+    grid-template-columns: 1fr;
+  }
+
+  .restaurant-search-form__button {
+    min-height: 46px;
+  }
+
+  .restaurant-search-item__actions {
+    width: 100%;
+  }
+
+  .restaurant-search-item__map-link,
+  .restaurant-search-item__add-button {
+    flex: 1;
+  }
+}
