@@ -5,8 +5,9 @@ import type { KeyboardEvent } from "react";
 import "./App.css";
 
 import NearbyRestaurantSearch from "./components/NearbyRestaurantSearch";
-
+import RestaurantCommentsButton from "./components/RestaurantCommentsButton";
 import OurhomeMenuCard from "./components/OurhomeMenuCard";
+
 import { useOurhomeMenus } from "./hooks/useOurhomeMenus";
 import { useLunchMenus } from "./hooks/useLunchMenus";
 import { drawLunchMenu } from "./utils/drawLunch";
@@ -111,31 +112,49 @@ function App() {
     recentLunchHistory,
     isLoading,
     errorMessage,
+
     addMenu: addMenuToDatabase,
+
     addRestaurantMenu: addRestaurantMenuToDatabase,
+
     deleteMenu: deleteMenuFromDatabase,
+
     restoreMenu: restoreMenuToDatabase,
+
     deleteArchivedMenu: deleteArchivedMenuFromDatabase,
+
     updateMenuWeight: updateMenuWeightInDatabase,
+
     clearNonDefaultMenus,
     confirmEatenMenu,
   } = useLunchMenus();
 
   const {
     weeklyMenus: ourhomeWeeklyMenus,
+
     isLoading: isOurhomeLoading,
+
     errorMessage: ourhomeErrorMessage,
+
     saveWeeklyMenus: saveOurhomeWeeklyMenus,
+
     clearMenu: clearOurhomeMenu,
   } = useOurhomeMenus();
 
   const [newMenuName, setNewMenuName] = useState("");
+
   const [drawResult, setDrawResult] = useState<LunchDrawResult | null>(null);
+
   const [message, setMessage] = useState("");
+
   const [resultMessage, setResultMessage] = useState("");
+
   const [isSaving, setIsSaving] = useState(false);
+
   const [confirmingMenuId, setConfirmingMenuId] = useState<string | null>(null);
+
   const [restoringMenuId, setRestoringMenuId] = useState<string | null>(null);
+
   const [deletingArchivedMenuId, setDeletingArchivedMenuId] = useState<
     string | null
   >(null);
@@ -160,18 +179,21 @@ function App() {
       {
         label: "오늘",
         dateKey: getDateKeyByOffset(0),
+
         menuName:
           recentLunchHistoryMap.get(getDateKeyByOffset(0)) ?? "아직 미정",
       },
       {
         label: "어제",
         dateKey: getDateKeyByOffset(-1),
+
         menuName:
           recentLunchHistoryMap.get(getDateKeyByOffset(-1)) ?? "기록 없음",
       },
       {
         label: "그제",
         dateKey: getDateKeyByOffset(-2),
+
         menuName:
           recentLunchHistoryMap.get(getDateKeyByOffset(-2)) ?? "기록 없음",
       },
@@ -194,12 +216,19 @@ function App() {
       return [];
     }
 
-    return [...menus].sort((firstMenu: LunchMenu, secondMenu: LunchMenu) => {
-      const firstCount = drawResult.counts[firstMenu.id] ?? 0;
-      const secondCount = drawResult.counts[secondMenu.id] ?? 0;
+    return [...menus].sort(
+      (
+        firstMenu: LunchMenu,
 
-      return secondCount - firstCount;
-    });
+        secondMenu: LunchMenu,
+      ) => {
+        const firstCount = drawResult.counts[firstMenu.id] ?? 0;
+
+        const secondCount = drawResult.counts[secondMenu.id] ?? 0;
+
+        return secondCount - firstCount;
+      },
+    );
   }, [drawResult, menus]);
 
   const clearCurrentDraw = () => {
@@ -212,6 +241,7 @@ function App() {
 
     if (!trimmedMenuName) {
       setMessage("메뉴 이름을 입력해주세요.");
+
       return;
     }
 
@@ -222,6 +252,7 @@ function App() {
 
     if (alreadyExists) {
       setMessage("이미 등록된 메뉴입니다.");
+
       return;
     }
 
@@ -232,7 +263,9 @@ function App() {
       await addMenuToDatabase(trimmedMenuName);
 
       setNewMenuName("");
+
       clearCurrentDraw();
+
       setMessage(`${trimmedMenuName} 메뉴를 공유 목록에 추가했습니다.`);
     } catch (error) {
       setMessage(getErrorMessage(error));
@@ -247,6 +280,7 @@ function App() {
   ): Promise<void> => {
     if (isDefault) {
       setMessage("아워홈은 기본 메뉴라서 숨길 수 없습니다.");
+
       return;
     }
 
@@ -254,6 +288,7 @@ function App() {
       await deleteMenuFromDatabase(menuId);
 
       clearCurrentDraw();
+
       setMessage("메뉴를 과거 메뉴 목록으로 이동했습니다.");
     } catch (error) {
       setMessage(getErrorMessage(error));
@@ -266,11 +301,13 @@ function App() {
   ): Promise<void> => {
     try {
       setRestoringMenuId(menuId);
+
       setMessage("");
 
       await restoreMenuToDatabase(menuId);
 
       clearCurrentDraw();
+
       setMessage(`${menuName} 메뉴를 다시 점심 후보에 추가했습니다.`);
     } catch (error) {
       setMessage(getErrorMessage(error));
@@ -293,11 +330,13 @@ function App() {
 
     try {
       setDeletingArchivedMenuId(menuId);
+
       setMessage("");
 
       await deleteArchivedMenuFromDatabase(menuId);
 
       clearCurrentDraw();
+
       setMessage(`${menuName} 메뉴를 완전히 삭제했습니다.`);
     } catch (error) {
       setMessage(getErrorMessage(error));
@@ -314,6 +353,7 @@ function App() {
       await updateMenuWeightInDatabase(menuId, weight);
 
       clearCurrentDraw();
+
       setMessage("");
     } catch (error) {
       setMessage(getErrorMessage(error));
@@ -333,7 +373,9 @@ function App() {
       await clearNonDefaultMenus();
 
       clearCurrentDraw();
+
       setNewMenuName("");
+
       setMessage("아워홈을 제외한 메뉴를 모두 과거 메뉴로 옮겼습니다.");
     } catch (error) {
       setMessage(getErrorMessage(error));
@@ -347,6 +389,7 @@ function App() {
       await saveOurhomeWeeklyMenus(weekMenuTexts);
 
       clearCurrentDraw();
+
       setMessage("이번 주 아워홈 식단을 저장했습니다.");
     } catch (error) {
       console.error("아워홈 식단 저장 실패:", error);
@@ -366,6 +409,7 @@ function App() {
       await clearOurhomeMenu(todayDateKey);
 
       clearCurrentDraw();
+
       setMessage("오늘 아워홈 식단을 비웠습니다.");
     } catch (error) {
       setMessage(
@@ -402,12 +446,14 @@ function App() {
 
     try {
       setConfirmingMenuId(menuId);
+
       setMessage("");
       setResultMessage("");
 
       await confirmEatenMenu(menuId);
 
       clearCurrentDraw();
+
       setMessage(
         `${menuName}을 오늘 점심으로 기록했습니다. 나머지 후보는 과거 메뉴로 옮겼습니다.`,
       );
@@ -427,11 +473,13 @@ function App() {
 
     try {
       setConfirmingMenuId(selectedMenu.id);
+
       setResultMessage("");
 
       await confirmEatenMenu(selectedMenu.id);
 
       clearCurrentDraw();
+
       setMessage(
         `${selectedMenu.name}을 오늘 점심으로 기록했습니다. 나머지 후보는 과거 메뉴로 옮겼습니다.`,
       );
@@ -444,16 +492,20 @@ function App() {
 
   const addRestaurantToMenu = async (
     restaurantName: string,
+
     kakaoPlaceId: string,
+
     kakaoPlaceUrl: string,
   ): Promise<void> => {
     await addRestaurantMenuToDatabase({
       name: restaurantName,
+
       kakaoPlaceId,
       kakaoPlaceUrl,
     });
 
     clearCurrentDraw();
+
     setMessage(`${restaurantName}을 점심 후보에 추가했습니다.`);
   };
 
@@ -503,6 +555,7 @@ function App() {
           <div className="hero__summary">
             <div className="summary-item">
               <span className="summary-item__value">{menus.length}</span>
+
               <span className="summary-item__label">등록 메뉴</span>
             </div>
 
@@ -510,6 +563,7 @@ function App() {
 
             <div className="summary-item">
               <span className="summary-item__value">{activeMenuCount}</span>
+
               <span className="summary-item__label">오늘의 후보</span>
             </div>
 
@@ -517,6 +571,7 @@ function App() {
 
             <div className="summary-item">
               <span className="summary-item__value">10</span>
+
               <span className="summary-item__label">추첨 횟수</span>
             </div>
           </div>
@@ -527,6 +582,7 @@ function App() {
             <div className="panel-heading">
               <div>
                 <p className="panel-heading__eyebrow">SHARED MENU LIST</p>
+
                 <h2 className="panel-heading__title">팀 점심 후보</h2>
               </div>
 
@@ -583,100 +639,113 @@ function App() {
             {message && <p className="message">{message}</p>}
 
             <div className="menu-list">
-              {menus.map((menu: LunchMenu, index: number) => {
-                if (menu.isDefault) {
+              {menus.map(
+                (
+                  menu: LunchMenu,
+
+                  index: number,
+                ) => {
+                  if (menu.isDefault) {
+                    return (
+                      <OurhomeMenuCard
+                        key={menu.id}
+                        menu={menu}
+                        dailyMenu={ourhomeDailyMenu}
+                        weeklyMenus={ourhomeWeeklyMenus}
+                        weightOptions={weightOptions}
+                        onSaveWeeklyMenus={handleSaveOurhomeWeeklyMenus}
+                        onClearDailyMenu={handleClearOurhomeDailyMenu}
+                        onWeightChange={(weight: number) => {
+                          void updateMenuWeight(menu.id, weight);
+                        }}
+                      />
+                    );
+                  }
+
+                  const isDisabled = menu.weight === 0;
+
                   return (
-                    <OurhomeMenuCard
+                    <article
+                      className={`menu-item ${
+                        isDisabled ? "menu-item--disabled" : ""
+                      }`}
                       key={menu.id}
-                      menu={menu}
-                      dailyMenu={ourhomeDailyMenu}
-                      weeklyMenus={ourhomeWeeklyMenus}
-                      weightOptions={weightOptions}
-                      onSaveWeeklyMenus={handleSaveOurhomeWeeklyMenus}
-                      onClearDailyMenu={handleClearOurhomeDailyMenu}
-                      onWeightChange={(weight: number) => {
-                        void updateMenuWeight(menu.id, weight);
-                      }}
-                    />
-                  );
-                }
-
-                const isDisabled = menu.weight === 0;
-
-                return (
-                  <article
-                    className={`menu-item ${
-                      isDisabled ? "menu-item--disabled" : ""
-                    }`}
-                    key={menu.id}
-                  >
-                    <div className="menu-item__number">
-                      {String(index + 1).padStart(2, "0")}
-                    </div>
-
-                    <div className="menu-item__content">
-                      <strong className="menu-item__name">{menu.name}</strong>
-
-                      <div className="menu-item__controls">
-                        <select
-                          className="weight-select"
-                          value={menu.weight}
-                          onChange={event => {
-                            void updateMenuWeight(
-                              menu.id,
-                              Number(event.target.value),
-                            );
-                          }}
-                          aria-label={`${menu.name} 가중치`}
-                          disabled={confirmingMenuId !== null}
-                        >
-                          {weightOptions.map((option: WeightOption) => (
-                            <option value={option.value} key={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-
-                        {menu.kakaoPlaceUrl && (
-                          <a
-                            className="menu-item__kakao-map-button"
-                            href={menu.kakaoPlaceUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            카카오맵에서 보기
-                          </a>
-                        )}
-
-                        <button
-                          className="menu-item__today-button"
-                          type="button"
-                          onClick={() => {
-                            void confirmMenuDirectly(menu.id, menu.name);
-                          }}
-                          disabled={confirmingMenuId !== null}
-                        >
-                          {confirmingMenuId === menu.id
-                            ? "등록 중..."
-                            : "오늘 메뉴"}
-                        </button>
-                      </div>
-                    </div>
-
-                    <button
-                      className="delete-button"
-                      type="button"
-                      onClick={() => {
-                        void deleteMenu(menu.id, Boolean(menu.isDefault));
-                      }}
-                      aria-label={`${menu.name} 과거 메뉴로 이동`}
-                      disabled={confirmingMenuId !== null}
                     >
-                      ×
-                    </button>
-                  </article>
-                );
-              })}
+                      <div className="menu-item__number">
+                        {String(index + 1).padStart(2, "0")}
+                      </div>
+
+                      <div className="menu-item__content">
+                        <strong className="menu-item__name">{menu.name}</strong>
+
+                        <div className="menu-item__controls">
+                          <select
+                            className="weight-select"
+                            value={menu.weight}
+                            onChange={event => {
+                              void updateMenuWeight(
+                                menu.id,
+                                Number(event.target.value),
+                              );
+                            }}
+                            aria-label={`${menu.name} 가중치`}
+                            disabled={confirmingMenuId !== null}
+                          >
+                            {weightOptions.map((option: WeightOption) => (
+                              <option value={option.value} key={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+
+                          {menu.kakaoPlaceId && (
+                            <RestaurantCommentsButton
+                              kakaoPlaceId={menu.kakaoPlaceId}
+                              placeName={menu.name}
+                            />
+                          )}
+
+                          {menu.kakaoPlaceUrl && (
+                            <a
+                              className="menu-item__kakao-map-button"
+                              href={menu.kakaoPlaceUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              카카오맵에서 보기
+                            </a>
+                          )}
+
+                          <button
+                            className="menu-item__today-button"
+                            type="button"
+                            onClick={() => {
+                              void confirmMenuDirectly(menu.id, menu.name);
+                            }}
+                            disabled={confirmingMenuId !== null}
+                          >
+                            {confirmingMenuId === menu.id
+                              ? "등록 중..."
+                              : "오늘 메뉴"}
+                          </button>
+                        </div>
+                      </div>
+
+                      <button
+                        className="delete-button"
+                        type="button"
+                        onClick={() => {
+                          void deleteMenu(menu.id, Boolean(menu.isDefault));
+                        }}
+                        aria-label={`${menu.name} 과거 메뉴로 이동`}
+                        disabled={confirmingMenuId !== null}
+                      >
+                        ×
+                      </button>
+                    </article>
+                  );
+                },
+              )}
             </div>
 
             <button
@@ -686,6 +755,7 @@ function App() {
               disabled={isLoading || activeMenuCount === 0}
             >
               <span>오늘 점심 뽑기</span>
+
               <span className="draw-button__icon">→</span>
             </button>
           </div>
@@ -761,6 +831,7 @@ function App() {
                 <div className="result-list">
                   <div className="result-list__heading">
                     <h3>10회 추첨 결과</h3>
+
                     <span>득표순</span>
                   </div>
 
@@ -828,57 +899,70 @@ function App() {
             </div>
 
             <div className="archived-menu-list">
-              {archivedMenus.map((menu: LunchMenu, index: number) => (
-                <article className="archived-menu-item" key={menu.id}>
-                  <span className="archived-menu-item__rank">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
+              {archivedMenus.map(
+                (
+                  menu: LunchMenu,
 
-                  <div className="archived-menu-item__content">
-                    <strong className="archived-menu-item__name">
-                      {menu.name}
-                    </strong>
-
-                    <span className="archived-menu-item__date">
-                      {getRegisteredDateText(menu.createdAt)}
+                  index: number,
+                ) => (
+                  <article className="archived-menu-item" key={menu.id}>
+                    <span className="archived-menu-item__rank">
+                      {String(index + 1).padStart(2, "0")}
                     </span>
-                  </div>
 
-                  <div className="archived-menu-item__actions">
-                    <button
-                      className="archived-menu-item__restore-button"
-                      type="button"
-                      onClick={() => {
-                        void restoreMenu(menu.id, menu.name);
-                      }}
-                      disabled={
-                        restoringMenuId !== null ||
-                        deletingArchivedMenuId !== null
-                      }
-                    >
-                      {restoringMenuId === menu.id
-                        ? "추가 중..."
-                        : "후보에 추가"}
-                    </button>
+                    <div className="archived-menu-item__content">
+                      <strong className="archived-menu-item__name">
+                        {menu.name}
+                      </strong>
 
-                    <button
-                      className="archived-menu-item__delete-button"
-                      type="button"
-                      onClick={() => {
-                        void deleteArchivedMenu(menu.id, menu.name);
-                      }}
-                      disabled={
-                        restoringMenuId !== null ||
-                        deletingArchivedMenuId !== null
-                      }
-                      aria-label={`${menu.name} 완전 삭제`}
-                      title="완전 삭제"
-                    >
-                      {deletingArchivedMenuId === menu.id ? "…" : "×"}
-                    </button>
-                  </div>
-                </article>
-              ))}
+                      <span className="archived-menu-item__date">
+                        {getRegisteredDateText(menu.createdAt)}
+                      </span>
+                    </div>
+
+                    <div className="archived-menu-item__actions">
+                      {menu.kakaoPlaceId && (
+                        <RestaurantCommentsButton
+                          kakaoPlaceId={menu.kakaoPlaceId}
+                          placeName={menu.name}
+                        />
+                      )}
+
+                      <button
+                        className="archived-menu-item__restore-button"
+                        type="button"
+                        onClick={() => {
+                          void restoreMenu(menu.id, menu.name);
+                        }}
+                        disabled={
+                          restoringMenuId !== null ||
+                          deletingArchivedMenuId !== null
+                        }
+                      >
+                        {restoringMenuId === menu.id
+                          ? "추가 중..."
+                          : "후보에 추가"}
+                      </button>
+
+                      <button
+                        className="archived-menu-item__delete-button"
+                        type="button"
+                        onClick={() => {
+                          void deleteArchivedMenu(menu.id, menu.name);
+                        }}
+                        disabled={
+                          restoringMenuId !== null ||
+                          deletingArchivedMenuId !== null
+                        }
+                        aria-label={`${menu.name} 완전 삭제`}
+                        title="완전 삭제"
+                      >
+                        {deletingArchivedMenuId === menu.id ? "…" : "×"}
+                      </button>
+                    </div>
+                  </article>
+                ),
+              )}
             </div>
           </section>
         )}

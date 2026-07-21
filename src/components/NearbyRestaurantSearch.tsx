@@ -8,7 +8,7 @@ import { loadRestaurantCommentCounts } from "../lib/restaurantComments";
 
 const OFFICE_ADDRESS = "서울특별시 강남구 역삼로7길 5";
 
-const SEARCH_RADIUS_TEXT = "3km";
+const SEARCH_RADIUS_TEXT = "1km";
 
 export type NearbyRestaurant = {
   id: string;
@@ -208,7 +208,7 @@ export default function NearbyRestaurantSearch({
           }}
           disabled={isSearching}
         >
-          {isSearching ? "검색 중..." : "3km 내 검색"}
+          {isSearching ? "검색 중..." : "1km 내 검색"}
         </button>
       </div>
 

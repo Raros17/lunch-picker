@@ -1750,3 +1750,8 @@ button {
   font-weight: 850;
   text-align: center;
 }
+
+.menu-item__controls,
+.archived-menu-item__actions {
+  flex-wrap: wrap;
+}
