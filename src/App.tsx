@@ -60,6 +60,23 @@ function getTodayDateKey(): string {
   return `${datePartMap.year}-${datePartMap.month}-${datePartMap.day}`;
 }
 
+function getDateKeyByOffset(dayOffset: number): string {
+  const targetDate = new Date(Date.now() + dayOffset * 24 * 60 * 60 * 1000);
+
+  const dateParts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(targetDate);
+
+  const datePartMap = Object.fromEntries(
+    dateParts.map(part => [part.type, part.value]),
+  );
+
+  return `${datePartMap.year}-${datePartMap.month}-${datePartMap.day}`;
+}
+
 function getRegisteredDateText(createdAt?: string): string {
   if (!createdAt) {
     return "이전에 등록한 메뉴";
@@ -77,6 +94,7 @@ function App() {
   const {
     menus,
     archivedMenus,
+    recentLunchHistory,
     isLoading,
     errorMessage,
     addMenu: addMenuToDatabase,
@@ -101,10 +119,7 @@ function App() {
   const [message, setMessage] = useState("");
   const [resultMessage, setResultMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const [isConfirmingEaten, setIsConfirmingEaten] = useState(false);
-  const [confirmedDrawMenuId, setConfirmedDrawMenuId] = useState<string | null>(
-    null,
-  );
+  const [confirmingMenuId, setConfirmingMenuId] = useState<string | null>(null);
   const [restoringMenuId, setRestoringMenuId] = useState<string | null>(null);
   const [deletingArchivedMenuId, setDeletingArchivedMenuId] = useState<
     string | null
@@ -113,6 +128,41 @@ function App() {
   const todayDateKey = getTodayDateKey();
 
   const ourhomeDailyMenu = ourhomeWeeklyMenus[todayDateKey] ?? null;
+
+  const recentLunchHistoryMap = useMemo(
+    () =>
+      new Map(
+        recentLunchHistory.map(historyItem => [
+          historyItem.dateKey,
+          historyItem.menuName,
+        ]),
+      ),
+    [recentLunchHistory],
+  );
+
+  const recentLunchCards = useMemo(
+    () => [
+      {
+        label: "오늘",
+        dateKey: getDateKeyByOffset(0),
+        menuName:
+          recentLunchHistoryMap.get(getDateKeyByOffset(0)) ?? "아직 미정",
+      },
+      {
+        label: "어제",
+        dateKey: getDateKeyByOffset(-1),
+        menuName:
+          recentLunchHistoryMap.get(getDateKeyByOffset(-1)) ?? "기록 없음",
+      },
+      {
+        label: "그제",
+        dateKey: getDateKeyByOffset(-2),
+        menuName:
+          recentLunchHistoryMap.get(getDateKeyByOffset(-2)) ?? "기록 없음",
+      },
+    ],
+    [recentLunchHistoryMap],
+  );
 
   const activeMenuCount = useMemo(
     () => menus.filter(menu => menu.weight > 0).length,
@@ -140,7 +190,6 @@ function App() {
   const clearCurrentDraw = () => {
     setDrawResult(null);
     setResultMessage("");
-    setConfirmedDrawMenuId(null);
   };
 
   const addMenu = async (): Promise<void> => {
@@ -316,11 +365,40 @@ function App() {
       const result = drawLunchMenu(menus, 10, 3);
 
       setDrawResult(result);
-      setConfirmedDrawMenuId(null);
       setResultMessage("");
       setMessage("");
     } catch (error) {
       setMessage(getErrorMessage(error));
+    }
+  };
+
+  const confirmMenuDirectly = async (
+    menuId: string,
+    menuName: string,
+  ): Promise<void> => {
+    const shouldConfirm = window.confirm(
+      `${menuName}을 오늘 점심으로 결정할까요?\n현재 후보는 모두 비워지고 나머지는 과거 메뉴로 이동합니다.`,
+    );
+
+    if (!shouldConfirm) {
+      return;
+    }
+
+    try {
+      setConfirmingMenuId(menuId);
+      setMessage("");
+      setResultMessage("");
+
+      await confirmEatenMenu(menuId);
+
+      clearCurrentDraw();
+      setMessage(
+        `${menuName}을 오늘 점심으로 기록했습니다. 나머지 후보는 과거 메뉴로 옮겼습니다.`,
+      );
+    } catch (error) {
+      setMessage(getErrorMessage(error));
+    } finally {
+      setConfirmingMenuId(null);
     }
   };
 
@@ -331,27 +409,20 @@ function App() {
 
     const selectedMenu = drawResult.selectedMenu;
 
-    if (confirmedDrawMenuId === selectedMenu.id) {
-      return;
-    }
-
     try {
-      setIsConfirmingEaten(true);
+      setConfirmingMenuId(selectedMenu.id);
       setResultMessage("");
 
       await confirmEatenMenu(selectedMenu.id);
 
-      setDrawResult(null);
-      setConfirmedDrawMenuId(null);
-      setResultMessage("");
-
+      clearCurrentDraw();
       setMessage(
-        `${selectedMenu.name}을 오늘 메뉴로 기록했습니다. 나머지 후보는 과거 메뉴로 옮겼습니다.`,
+        `${selectedMenu.name}을 오늘 점심으로 기록했습니다. 나머지 후보는 과거 메뉴로 옮겼습니다.`,
       );
     } catch (error) {
       setResultMessage(getErrorMessage(error));
     } finally {
-      setIsConfirmingEaten(false);
+      setConfirmingMenuId(null);
     }
   };
 
@@ -380,6 +451,25 @@ function App() {
             <br />
             팀원이 추가한 메뉴가 모두에게 함께 표시됩니다.
           </p>
+
+          <div className="recent-lunch-history">
+            {recentLunchCards.map((historyCard, index) => (
+              <article
+                className={`recent-lunch-history__item ${
+                  index === 0 ? "recent-lunch-history__item--today" : ""
+                }`}
+                key={historyCard.dateKey}
+              >
+                <span className="recent-lunch-history__label">
+                  {historyCard.label}
+                </span>
+
+                <strong className="recent-lunch-history__menu">
+                  {historyCard.menuName}
+                </strong>
+              </article>
+            ))}
+          </div>
 
           <div className="hero__summary">
             <div className="summary-item">
@@ -498,23 +588,39 @@ function App() {
                     <div className="menu-item__content">
                       <strong className="menu-item__name">{menu.name}</strong>
 
-                      <select
-                        className="weight-select"
-                        value={menu.weight}
-                        onChange={event => {
-                          void updateMenuWeight(
-                            menu.id,
-                            Number(event.target.value),
-                          );
-                        }}
-                        aria-label={`${menu.name} 가중치`}
-                      >
-                        {weightOptions.map(option => (
-                          <option value={option.value} key={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="menu-item__controls">
+                        <select
+                          className="weight-select"
+                          value={menu.weight}
+                          onChange={event => {
+                            void updateMenuWeight(
+                              menu.id,
+                              Number(event.target.value),
+                            );
+                          }}
+                          aria-label={`${menu.name} 가중치`}
+                          disabled={confirmingMenuId !== null}
+                        >
+                          {weightOptions.map(option => (
+                            <option value={option.value} key={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+
+                        <button
+                          className="menu-item__today-button"
+                          type="button"
+                          onClick={() => {
+                            void confirmMenuDirectly(menu.id, menu.name);
+                          }}
+                          disabled={confirmingMenuId !== null}
+                        >
+                          {confirmingMenuId === menu.id
+                            ? "등록 중..."
+                            : "오늘 메뉴"}
+                        </button>
+                      </div>
                     </div>
 
                     <button
@@ -524,6 +630,7 @@ function App() {
                         void deleteMenu(menu.id, Boolean(menu.isDefault));
                       }}
                       aria-label={`${menu.name} 과거 메뉴로 이동`}
+                      disabled={confirmingMenuId !== null}
                     >
                       ×
                     </button>
@@ -579,25 +686,16 @@ function App() {
                 </div>
 
                 <button
-                  className={`confirm-eaten-button ${
-                    confirmedDrawMenuId === drawResult.selectedMenu.id
-                      ? "confirm-eaten-button--confirmed"
-                      : ""
-                  }`}
+                  className="confirm-eaten-button"
                   type="button"
                   onClick={() => {
                     void confirmSelectedMenu();
                   }}
-                  disabled={
-                    isConfirmingEaten ||
-                    confirmedDrawMenuId === drawResult.selectedMenu.id
-                  }
+                  disabled={confirmingMenuId !== null}
                 >
-                  {confirmedDrawMenuId === drawResult.selectedMenu.id
-                    ? "오늘 메뉴로 기록 완료"
-                    : isConfirmingEaten
-                      ? "기록 중..."
-                      : "오늘 이걸로 결정"}
+                  {confirmingMenuId === drawResult.selectedMenu.id
+                    ? "기록 중..."
+                    : "오늘 이걸로 결정"}
                 </button>
 
                 {resultMessage && (

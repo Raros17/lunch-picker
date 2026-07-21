@@ -1152,3 +1152,114 @@ button {
     flex: 1;
   }
 }
+
+.menu-item__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.menu-item__today-button {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 2px solid var(--text);
+  border-radius: 10px;
+  color: var(--text);
+  background: var(--yellow);
+  box-shadow: 3px 3px 0 var(--text);
+  font-size: 11px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.menu-item__today-button:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--text);
+}
+
+.menu-item__today-button:disabled,
+.delete-button:disabled,
+.weight-select:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+@media (max-width: 520px) {
+  .menu-item__controls {
+    align-items: stretch;
+  }
+
+  .menu-item__today-button {
+    min-height: 34px;
+  }
+}
+
+/* =========================================================
+   오늘 · 어제 · 그제 점심 기록
+========================================================= */
+
+.recent-lunch-history {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  width: min(620px, 100%);
+  margin: 24px auto 20px;
+}
+
+.recent-lunch-history__item {
+  display: flex;
+  min-width: 0;
+  min-height: 84px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 13px 10px;
+  border: 2px solid var(--text);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 4px 4px 0 var(--text);
+}
+
+.recent-lunch-history__item--today {
+  background: var(--yellow);
+  box-shadow: 5px 5px 0 var(--red);
+}
+
+.recent-lunch-history__label {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.recent-lunch-history__item--today .recent-lunch-history__label {
+  color: var(--red);
+}
+
+.recent-lunch-history__menu {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 900;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 520px) {
+  .recent-lunch-history {
+    gap: 7px;
+  }
+
+  .recent-lunch-history__item {
+    min-height: 74px;
+    padding: 10px 7px;
+  }
+
+  .recent-lunch-history__menu {
+    font-size: 13px;
+  }
+}

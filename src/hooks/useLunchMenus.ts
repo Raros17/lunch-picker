@@ -9,6 +9,12 @@ import type { LunchMenu } from "../types";
 
 const RECENT_EATEN_EXCLUSION_DAYS = 14;
 const ARCHIVED_MENU_LIMIT = 10;
+const ONE_DAY_MILLISECONDS = 24 * 60 * 60 * 1000;
+
+export type RecentLunchHistoryItem = {
+  dateKey: string;
+  menuName: string;
+};
 
 type LunchMenuRow = {
   id: string;
@@ -21,10 +27,15 @@ type LunchMenuRow = {
   created_at: string;
 };
 
+type LunchHistoryRow = {
+  lunch_date: string;
+  menu_name: string;
+};
+
 type UseLunchMenusResult = {
   menus: LunchMenu[];
   archivedMenus: LunchMenu[];
-  deleteArchivedMenu: (menuId: string) => Promise<void>;
+  recentLunchHistory: RecentLunchHistoryItem[];
 
   isLoading: boolean;
   errorMessage: string;
@@ -34,6 +45,8 @@ type UseLunchMenusResult = {
   deleteMenu: (menuId: string) => Promise<void>;
 
   restoreMenu: (menuId: string) => Promise<void>;
+
+  deleteArchivedMenu: (menuId: string) => Promise<void>;
 
   updateMenuWeight: (menuId: string, weight: number) => Promise<void>;
 
@@ -68,6 +81,27 @@ function convertMenuRow(row: LunchMenuRow): LunchMenu {
   };
 }
 
+function getSeoulDateKey(date: Date): string {
+  const dateParts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+
+  const datePartMap = Object.fromEntries(
+    dateParts.map(part => [part.type, part.value]),
+  );
+
+  return `${datePartMap.year}-${datePartMap.month}-${datePartMap.day}`;
+}
+
+function getRecentDateKeys(): string[] {
+  return [0, -1, -2].map(dayOffset =>
+    getSeoulDateKey(new Date(Date.now() + dayOffset * ONE_DAY_MILLISECONDS)),
+  );
+}
+
 function getRecentEatenCutoff(): string {
   const cutoffDate = new Date();
 
@@ -80,6 +114,10 @@ export function useLunchMenus(): UseLunchMenusResult {
   const [menus, setMenus] = useState<LunchMenu[]>([]);
 
   const [archivedMenus, setArchivedMenus] = useState<LunchMenu[]>([]);
+
+  const [recentLunchHistory, setRecentLunchHistory] = useState<
+    RecentLunchHistoryItem[]
+  >([]);
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -153,11 +191,38 @@ export function useLunchMenus(): UseLunchMenusResult {
     setArchivedMenus(nextArchivedMenus);
   }, []);
 
+  const loadRecentLunchHistory = useCallback(async (): Promise<void> => {
+    const recentDateKeys = getRecentDateKeys();
+
+    const { data, error } = await supabase
+      .from("lunch_history")
+      .select("lunch_date, menu_name")
+      .in("lunch_date", recentDateKeys)
+      .order("lunch_date", {
+        ascending: false,
+      });
+
+    if (error) {
+      throw error;
+    }
+
+    const nextHistory = ((data ?? []) as LunchHistoryRow[]).map(row => ({
+      dateKey: row.lunch_date,
+      menuName: row.menu_name,
+    }));
+
+    setRecentLunchHistory(nextHistory);
+  }, []);
+
   const loadMenus = useCallback(async (): Promise<void> => {
     try {
       await ensureAnonymousSession();
 
-      await Promise.all([loadActiveMenus(), loadArchivedMenus()]);
+      await Promise.all([
+        loadActiveMenus(),
+        loadArchivedMenus(),
+        loadRecentLunchHistory(),
+      ]);
 
       setErrorMessage("");
     } catch (error) {
@@ -167,7 +232,7 @@ export function useLunchMenus(): UseLunchMenusResult {
     } finally {
       setIsLoading(false);
     }
-  }, [loadActiveMenus, loadArchivedMenus]);
+  }, [loadActiveMenus, loadArchivedMenus, loadRecentLunchHistory]);
 
   const addMenu = useCallback(
     async (menuName: string): Promise<void> => {
@@ -175,10 +240,6 @@ export function useLunchMenus(): UseLunchMenusResult {
 
       const trimmedMenuName = menuName.trim();
 
-      /*
-       * 과거 메뉴에 같은 이름이 있으면
-       * 새로 만들지 않고 복원한다.
-       */
       const { data: existingMenu, error: findError } = await supabase
         .from("lunch_menus")
         .select("id, is_active")
@@ -232,10 +293,6 @@ export function useLunchMenus(): UseLunchMenusResult {
     [loadMenus],
   );
 
-  /*
-   * 기존 deleteMenu라는 이름은 유지하지만
-   * 실제로는 DB에서 삭제하지 않고 숨긴다.
-   */
   const deleteMenu = useCallback(
     async (menuId: string): Promise<void> => {
       await ensureAnonymousSession();
@@ -312,10 +369,6 @@ export function useLunchMenus(): UseLunchMenusResult {
     [loadMenus],
   );
 
-  /*
-   * 전체 비우기도 완전 삭제가 아니라
-   * 일반 메뉴를 모두 과거 메뉴로 이동한다.
-   */
   const clearNonDefaultMenus = useCallback(async (): Promise<void> => {
     await ensureAnonymousSession();
 
@@ -328,10 +381,6 @@ export function useLunchMenus(): UseLunchMenusResult {
     await loadMenus();
   }, [loadMenus]);
 
-  /*
-   * 추첨 결과에서 실제로 먹기로 정했을 때 호출.
-   * 최근 먹은 날짜와 누적 횟수를 기록한다.
-   */
   const confirmEatenMenu = useCallback(
     async (menuId: string): Promise<void> => {
       await ensureAnonymousSession();
@@ -371,13 +420,24 @@ export function useLunchMenus(): UseLunchMenusResult {
       }
 
       realtimeChannel = supabase
-        .channel("shared-lunch-menu-changes")
+        .channel("shared-lunch-data-changes")
         .on(
           "postgres_changes",
           {
             event: "*",
             schema: "public",
             table: "lunch_menus",
+          },
+          () => {
+            void loadMenus();
+          },
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "lunch_history",
           },
           () => {
             void loadMenus();
@@ -408,6 +468,7 @@ export function useLunchMenus(): UseLunchMenusResult {
   return {
     menus,
     archivedMenus,
+    recentLunchHistory,
 
     isLoading,
     errorMessage,
