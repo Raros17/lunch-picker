@@ -16,6 +16,12 @@ export type RecentLunchHistoryItem = {
   menuName: string;
 };
 
+export type RestaurantMenuInput = {
+  name: string;
+  kakaoPlaceId: string;
+  kakaoPlaceUrl: string;
+};
+
 type LunchMenuRow = {
   id: string;
   name: string;
@@ -25,6 +31,8 @@ type LunchMenuRow = {
   last_eaten_at: string | null;
   eaten_count: number;
   created_at: string;
+  kakao_place_id: string | null;
+  kakao_place_url: string | null;
 };
 
 type LunchHistoryRow = {
@@ -41,6 +49,8 @@ type UseLunchMenusResult = {
   errorMessage: string;
 
   addMenu: (menuName: string) => Promise<void>;
+
+  addRestaurantMenu: (restaurant: RestaurantMenuInput) => Promise<void>;
 
   deleteMenu: (menuId: string) => Promise<void>;
 
@@ -78,6 +88,8 @@ function convertMenuRow(row: LunchMenuRow): LunchMenu {
     lastEatenAt: row.last_eaten_at,
     eatenCount: row.eaten_count,
     createdAt: row.created_at,
+    kakaoPlaceId: row.kakao_place_id,
+    kakaoPlaceUrl: row.kakao_place_url,
   };
 }
 
@@ -135,7 +147,9 @@ export function useLunchMenus(): UseLunchMenusResult {
           is_active,
           last_eaten_at,
           eaten_count,
-          created_at
+          created_at,
+          kakao_place_id,
+          kakao_place_url
         `,
       )
       .eq("is_active", true)
@@ -169,7 +183,9 @@ export function useLunchMenus(): UseLunchMenusResult {
           is_active,
           last_eaten_at,
           eaten_count,
-          created_at
+          created_at,
+          kakao_place_id,
+          kakao_place_url
         `,
       )
       .eq("is_active", false)
@@ -283,6 +299,88 @@ export function useLunchMenus(): UseLunchMenusResult {
       if (error) {
         if (error.code === "23505") {
           throw new Error("이미 등록된 메뉴입니다.");
+        }
+
+        throw error;
+      }
+
+      await loadMenus();
+    },
+    [loadMenus],
+  );
+
+  const addRestaurantMenu = useCallback(
+    async (restaurant: RestaurantMenuInput): Promise<void> => {
+      const session = await ensureAnonymousSession();
+
+      const restaurantName = restaurant.name.trim();
+      const kakaoPlaceId = restaurant.kakaoPlaceId.trim();
+      const kakaoPlaceUrl = restaurant.kakaoPlaceUrl.trim();
+
+      if (!restaurantName || !kakaoPlaceId || !kakaoPlaceUrl) {
+        throw new Error("가게 정보를 확인할 수 없습니다.");
+      }
+
+      const { data: existingPlace, error: placeFindError } = await supabase
+        .from("lunch_menus")
+        .select("id, is_active")
+        .eq("kakao_place_id", kakaoPlaceId)
+        .limit(1)
+        .maybeSingle();
+
+      if (placeFindError) {
+        throw placeFindError;
+      }
+
+      let existingMenu = existingPlace;
+
+      if (!existingMenu) {
+        const { data: existingNameMenu, error: nameFindError } = await supabase
+          .from("lunch_menus")
+          .select("id, is_active")
+          .ilike("name", restaurantName)
+          .limit(1)
+          .maybeSingle();
+
+        if (nameFindError) {
+          throw nameFindError;
+        }
+
+        existingMenu = existingNameMenu;
+      }
+
+      if (existingMenu) {
+        const { error: updateError } = await supabase
+          .from("lunch_menus")
+          .update({
+            is_active: true,
+            weight: 1,
+            kakao_place_id: kakaoPlaceId,
+            kakao_place_url: kakaoPlaceUrl,
+          })
+          .eq("id", existingMenu.id);
+
+        if (updateError) {
+          throw updateError;
+        }
+
+        await loadMenus();
+        return;
+      }
+
+      const { error } = await supabase.from("lunch_menus").insert({
+        name: restaurantName,
+        weight: 1,
+        is_default: false,
+        is_active: true,
+        created_by: session.user.id,
+        kakao_place_id: kakaoPlaceId,
+        kakao_place_url: kakaoPlaceUrl,
+      });
+
+      if (error) {
+        if (error.code === "23505") {
+          throw new Error("이미 등록된 가게입니다.");
         }
 
         throw error;
@@ -474,6 +572,7 @@ export function useLunchMenus(): UseLunchMenusResult {
     errorMessage,
 
     addMenu,
+    addRestaurantMenu,
     deleteMenu,
     restoreMenu,
     deleteArchivedMenu,

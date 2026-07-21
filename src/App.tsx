@@ -1,16 +1,29 @@
 import { useMemo, useState } from "react";
 
+import type { KeyboardEvent } from "react";
+
 import "./App.css";
 
 import NearbyRestaurantSearch from "./components/NearbyRestaurantSearch";
+
 import OurhomeMenuCard from "./components/OurhomeMenuCard";
 import { useOurhomeMenus } from "./hooks/useOurhomeMenus";
 import { useLunchMenus } from "./hooks/useLunchMenus";
 import { drawLunchMenu } from "./utils/drawLunch";
 
-import type { LunchDrawResult } from "./types";
+import type { LunchDrawResult, LunchMenu } from "./types";
 
-const weightOptions = [
+type WeightOption = {
+  value: number;
+  label: string;
+};
+
+type RecentLunchHistoryItem = {
+  dateKey: string;
+  menuName: string;
+};
+
+const weightOptions: WeightOption[] = [
   {
     value: 0,
     label: "오늘은 제외",
@@ -99,6 +112,7 @@ function App() {
     isLoading,
     errorMessage,
     addMenu: addMenuToDatabase,
+    addRestaurantMenu: addRestaurantMenuToDatabase,
     deleteMenu: deleteMenuFromDatabase,
     restoreMenu: restoreMenuToDatabase,
     deleteArchivedMenu: deleteArchivedMenuFromDatabase,
@@ -133,7 +147,7 @@ function App() {
   const recentLunchHistoryMap = useMemo(
     () =>
       new Map(
-        recentLunchHistory.map(historyItem => [
+        recentLunchHistory.map((historyItem: RecentLunchHistoryItem) => [
           historyItem.dateKey,
           historyItem.menuName,
         ]),
@@ -166,12 +180,12 @@ function App() {
   );
 
   const activeMenuCount = useMemo(
-    () => menus.filter(menu => menu.weight > 0).length,
+    () => menus.filter((menu: LunchMenu) => menu.weight > 0).length,
     [menus],
   );
 
   const hasDeletableMenu = useMemo(
-    () => menus.some(menu => !menu.isDefault),
+    () => menus.some((menu: LunchMenu) => !menu.isDefault),
     [menus],
   );
 
@@ -180,7 +194,7 @@ function App() {
       return [];
     }
 
-    return [...menus].sort((firstMenu, secondMenu) => {
+    return [...menus].sort((firstMenu: LunchMenu, secondMenu: LunchMenu) => {
       const firstCount = drawResult.counts[firstMenu.id] ?? 0;
       const secondCount = drawResult.counts[secondMenu.id] ?? 0;
 
@@ -202,7 +216,8 @@ function App() {
     }
 
     const alreadyExists = menus.some(
-      menu => menu.name.toLowerCase() === trimmedMenuName.toLowerCase(),
+      (menu: LunchMenu) =>
+        menu.name.toLowerCase() === trimmedMenuName.toLowerCase(),
     );
 
     if (alreadyExists) {
@@ -427,16 +442,22 @@ function App() {
     }
   };
 
-  const addRestaurantToMenu = async (restaurantName: string): Promise<void> => {
-    await addMenuToDatabase(restaurantName);
+  const addRestaurantToMenu = async (
+    restaurantName: string,
+    kakaoPlaceId: string,
+    kakaoPlaceUrl: string,
+  ): Promise<void> => {
+    await addRestaurantMenuToDatabase({
+      name: restaurantName,
+      kakaoPlaceId,
+      kakaoPlaceUrl,
+    });
 
     clearCurrentDraw();
     setMessage(`${restaurantName}을 점심 후보에 추가했습니다.`);
   };
 
-  const handleMenuInputKeyDown = (
-    event: React.KeyboardEvent<HTMLInputElement>,
-  ) => {
+  const handleMenuInputKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter" && !isSaving) {
       void addMenu();
     }
@@ -562,7 +583,7 @@ function App() {
             {message && <p className="message">{message}</p>}
 
             <div className="menu-list">
-              {menus.map((menu, index) => {
+              {menus.map((menu: LunchMenu, index: number) => {
                 if (menu.isDefault) {
                   return (
                     <OurhomeMenuCard
@@ -573,7 +594,7 @@ function App() {
                       weightOptions={weightOptions}
                       onSaveWeeklyMenus={handleSaveOurhomeWeeklyMenus}
                       onClearDailyMenu={handleClearOurhomeDailyMenu}
-                      onWeightChange={weight => {
+                      onWeightChange={(weight: number) => {
                         void updateMenuWeight(menu.id, weight);
                       }}
                     />
@@ -609,12 +630,23 @@ function App() {
                           aria-label={`${menu.name} 가중치`}
                           disabled={confirmingMenuId !== null}
                         >
-                          {weightOptions.map(option => (
+                          {weightOptions.map((option: WeightOption) => (
                             <option value={option.value} key={option.value}>
                               {option.label}
                             </option>
                           ))}
                         </select>
+
+                        {menu.kakaoPlaceUrl && (
+                          <a
+                            className="menu-item__kakao-map-button"
+                            href={menu.kakaoPlaceUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            카카오맵에서 보기
+                          </a>
+                        )}
 
                         <button
                           className="menu-item__today-button"
@@ -713,7 +745,9 @@ function App() {
                 {drawResult.topMenus.length > 1 && (
                   <p className="tie-message">
                     공동 1위{" "}
-                    {drawResult.topMenus.map(menu => menu.name).join(", ")}{" "}
+                    {drawResult.topMenus
+                      .map((menu: LunchMenu) => menu.name)
+                      .join(", ")}{" "}
                     중에서 최종 선택했습니다.
                   </p>
                 )}
@@ -730,7 +764,7 @@ function App() {
                     <span>득표순</span>
                   </div>
 
-                  {sortedResultMenus.map(menu => {
+                  {sortedResultMenus.map((menu: LunchMenu) => {
                     const count = drawResult.counts[menu.id] ?? 0;
 
                     const barWidth = `${(count / 10) * 100}%`;
@@ -794,7 +828,7 @@ function App() {
             </div>
 
             <div className="archived-menu-list">
-              {archivedMenus.map((menu, index) => (
+              {archivedMenus.map((menu: LunchMenu, index: number) => (
                 <article className="archived-menu-item" key={menu.id}>
                   <span className="archived-menu-item__rank">
                     {String(index + 1).padStart(2, "0")}

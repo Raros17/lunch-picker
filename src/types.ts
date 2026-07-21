@@ -2,14 +2,16 @@ export type LunchMenu = {
   id: string;
   name: string;
   weight: number;
-
   isDefault?: boolean;
   isActive?: boolean;
-
   lastEatenAt?: string | null;
   eatenCount?: number;
   createdAt?: string;
+
+  kakaoPlaceId?: string | null;
+  kakaoPlaceUrl?: string | null;
 };
+
 export type LunchDrawResult = {
   selectedMenu: LunchMenu;
   drawResults: LunchMenu[];

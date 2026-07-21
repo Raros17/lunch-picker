@@ -3,7 +3,7 @@ import { useState } from "react";
 const OFFICE_ADDRESS = "서울특별시 강남구 역삼로7길 5";
 const SEARCH_RADIUS_TEXT = "3km";
 
-type NearbyRestaurant = {
+export type NearbyRestaurant = {
   id: string;
   name: string;
   categoryName: string;
@@ -20,7 +20,11 @@ type SearchRestaurantsResponse = {
 };
 
 type NearbyRestaurantSearchProps = {
-  onAddRestaurant: (restaurantName: string) => Promise<void>;
+  onAddRestaurant: (
+    restaurantName: string,
+    kakaoPlaceId: string,
+    kakaoPlaceUrl: string,
+  ) => Promise<void>;
 };
 
 function getDistanceText(distanceMeters: number): string {
@@ -92,7 +96,11 @@ export default function NearbyRestaurantSearch({
       setAddingRestaurantId(restaurant.id);
       setMessage("");
 
-      await onAddRestaurant(restaurant.name);
+      await onAddRestaurant(
+        restaurant.name,
+        restaurant.id,
+        restaurant.placeUrl,
+      );
 
       setMessage(`${restaurant.name}을 점심 후보에 추가했습니다.`);
     } catch (error) {
