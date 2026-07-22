@@ -712,7 +712,7 @@ function App() {
                               target="_blank"
                               rel="noreferrer"
                             >
-                              카카오맵에서 보기
+                              카카오맵
                             </a>
                           )}
 
@@ -726,7 +726,7 @@ function App() {
                           >
                             {confirmingMenuId === menu.id
                               ? "등록 중..."
-                              : "오늘 메뉴"}
+                              : "선택!"}
                           </button>
                         </div>
                       </div>
