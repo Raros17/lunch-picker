@@ -1,0 +1,358 @@
+.random-restaurant-panel {
+  margin-top: 22px;
+  background:
+    radial-gradient(
+      circle at 92% 12%,
+      rgba(255, 216, 77, 0.9) 0 56px,
+      transparent 57px
+    ),
+    #f7f3ff;
+}
+
+.random-restaurant-panel__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.random-restaurant-panel__eyebrow {
+  margin: 0 0 5px;
+  color: var(--purple);
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+}
+
+.random-restaurant-panel__title {
+  margin: 0;
+  color: var(--text);
+  font-family: "Bagel Fat One", sans-serif;
+  font-size: clamp(27px, 4vw, 38px);
+  font-weight: 400;
+  letter-spacing: -0.04em;
+}
+
+.random-restaurant-panel__description {
+  margin: 9px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.65;
+}
+
+.random-restaurant-panel__badge {
+  display: inline-flex;
+  min-height: 38px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  padding: 0 13px;
+  border: 2px solid var(--text);
+  border-radius: 999px;
+  background: var(--yellow);
+  color: var(--text);
+  box-shadow: 3px 3px 0 var(--text);
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.random-restaurant-panel__draw-button {
+  display: flex;
+  width: 100%;
+  min-height: 84px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 22px;
+  padding: 16px 22px;
+  border: 3px solid var(--text);
+  border-radius: 19px;
+  background: var(--purple);
+  color: #ffffff;
+  box-shadow:
+    0 7px 0 var(--text),
+    0 15px 28px rgba(151, 117, 250, 0.2);
+  text-align: left;
+}
+
+.random-restaurant-panel__draw-button span {
+  font-size: 13px;
+  font-weight: 750;
+  opacity: 0.9;
+}
+
+.random-restaurant-panel__draw-button strong {
+  font-size: 20px;
+  font-weight: 950;
+}
+
+.random-restaurant-panel__draw-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow:
+    0 9px 0 var(--text),
+    0 19px 30px rgba(151, 117, 250, 0.24);
+}
+
+.random-restaurant-panel__draw-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.random-restaurant-result {
+  position: relative;
+  margin-top: 22px;
+  padding: 22px;
+  overflow: hidden;
+  border: 3px solid var(--text);
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: 7px 7px 0 var(--text);
+}
+
+.random-restaurant-result::after {
+  position: absolute;
+  right: -48px;
+  bottom: -62px;
+  width: 150px;
+  height: 150px;
+  border: 3px solid var(--text);
+  border-radius: 42px;
+  background: rgba(255, 158, 181, 0.45);
+  content: "";
+  transform: rotate(18deg);
+}
+
+.random-restaurant-result__label {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  padding: 0 10px;
+  border: 2px solid var(--text);
+  border-radius: 999px;
+  background: var(--yellow);
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 950;
+}
+
+.random-restaurant-result__main {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 15px;
+}
+
+.random-restaurant-result__main > div:first-child {
+  min-width: 0;
+}
+
+.random-restaurant-result__name {
+  margin: 0;
+  color: var(--text);
+  font-family: "Bagel Fat One", sans-serif;
+  font-size: clamp(30px, 5vw, 48px);
+  font-weight: 400;
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+  word-break: keep-all;
+}
+
+.random-restaurant-result__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  margin: 11px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.random-restaurant-result__meta strong {
+  color: var(--red);
+}
+
+.random-restaurant-result__address,
+.random-restaurant-result__phone {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.random-restaurant-result__dice {
+  display: grid;
+  width: 78px;
+  height: 78px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 3px solid var(--text);
+  border-radius: 24px;
+  background: var(--purple);
+  box-shadow: 5px 5px 0 var(--yellow);
+  font-size: 37px;
+  transform: rotate(5deg);
+}
+
+.random-restaurant-result__actions {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+  margin-top: 20px;
+}
+
+.random-restaurant-result__actions .restaurant-comments-button,
+.random-restaurant-result__map-button,
+.random-restaurant-result__add-button,
+.random-restaurant-result__confirm-button {
+  display: inline-flex;
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 0 12px;
+  border: 2px solid var(--text);
+  border-radius: 11px;
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 950;
+  text-align: center;
+  text-decoration: none;
+}
+
+.random-restaurant-result__map-button {
+  background: #fee500;
+  color: #191919;
+}
+
+.random-restaurant-result__add-button {
+  background: #dce7ff;
+}
+
+.random-restaurant-result__confirm-button {
+  background: var(--red);
+  color: #ffffff;
+}
+
+.random-restaurant-result__add-button:disabled,
+.random-restaurant-result__confirm-button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.random-restaurant-result__retry-button {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  min-height: 48px;
+  margin-top: 10px;
+  border: 2px solid var(--text);
+  border-radius: 12px;
+  background: var(--text);
+  color: #ffffff;
+  box-shadow: 4px 4px 0 var(--purple);
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.random-restaurant-result__retry-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 5px 5px 0 var(--purple);
+}
+
+.random-restaurant-result__retry-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.random-restaurant-panel__message {
+  margin: 15px 0 0;
+  color: var(--red-dark);
+  font-size: 13px;
+  font-weight: 850;
+  text-align: center;
+}
+
+@media (max-width: 680px) {
+  .random-restaurant-panel__heading {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .random-restaurant-panel__badge {
+    align-self: flex-start;
+  }
+
+  .random-restaurant-panel__draw-button {
+    min-height: 78px;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .random-restaurant-result {
+    padding: 18px;
+    box-shadow: 4px 4px 0 var(--text);
+  }
+
+  .random-restaurant-result__main {
+    align-items: flex-start;
+  }
+
+  .random-restaurant-result__name {
+    font-size: 31px;
+  }
+
+  .random-restaurant-result__dice {
+    width: 56px;
+    height: 56px;
+    border-radius: 18px;
+    font-size: 27px;
+  }
+
+  .random-restaurant-result__actions {
+    grid-template-areas:
+      "comment map"
+      "add confirm";
+  }
+
+  .random-restaurant-result__actions .restaurant-comments-button {
+    grid-area: comment;
+  }
+
+  .random-restaurant-result__map-button {
+    grid-area: map;
+  }
+
+  .random-restaurant-result__add-button {
+    grid-area: add;
+  }
+
+  .random-restaurant-result__confirm-button {
+    grid-area: confirm;
+  }
+}
+
+@media (max-width: 430px) {
+  .random-restaurant-result__actions {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "comment"
+      "map"
+      "add"
+      "confirm";
+  }
+}

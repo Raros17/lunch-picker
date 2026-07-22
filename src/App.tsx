@@ -5,6 +5,7 @@ import LunchCandidatePanel from "./components/lunch/LunchCandidatePanel";
 import LunchDrawResult from "./components/lunch/LunchDrawResult";
 import RecentLunchHistory from "./components/lunch/RecentLunchHistory";
 import NearbyRestaurantSearch from "./components/NearbyRestaurantSearch";
+import RandomRestaurantPicker from "./components/RandomRestaurantPicker";
 
 import { useLunchPickerPage } from "./hooks/useLunchPickerPage";
 
@@ -65,6 +66,10 @@ function App() {
 
           <LunchDrawResult {...lunchPickerPage.drawResultProps} />
         </section>
+
+        <RandomRestaurantPicker
+          onAddRestaurant={lunchPickerPage.addRestaurantToMenu}
+        />
 
         <NearbyRestaurantSearch
           onAddRestaurant={lunchPickerPage.addRestaurantToMenu}
