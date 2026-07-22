@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
+
+import { createPortal } from "react-dom";
 
 import "./RestaurantCommentsButton.css";
 
@@ -9,6 +11,8 @@ import {
 } from "../lib/restaurantComments";
 
 import type { RestaurantComment } from "../lib/restaurantComments";
+
+const RESTAURANT_COMMENT_MODAL_OPEN_EVENT = "restaurant-comment-modal-open";
 
 type RestaurantCommentsButtonProps = {
   kakaoPlaceId: string;
@@ -46,6 +50,8 @@ export default function RestaurantCommentsButton({
   commentCount = 0,
   onCommentCountChange,
 }: RestaurantCommentsButtonProps) {
+  const modalInstanceId = useId();
+
   const [isOpen, setIsOpen] = useState(false);
 
   const [comments, setComments] = useState<RestaurantComment[]>([]);
@@ -67,6 +73,52 @@ export default function RestaurantCommentsButton({
   useEffect(() => {
     setCurrentCommentCount(commentCount);
   }, [commentCount]);
+
+  useEffect(() => {
+    const closeWhenAnotherModalOpens = (event: Event) => {
+      const customEvent = event as CustomEvent<string>;
+
+      if (customEvent.detail !== modalInstanceId) {
+        setIsOpen(false);
+      }
+    };
+
+    window.addEventListener(
+      RESTAURANT_COMMENT_MODAL_OPEN_EVENT,
+      closeWhenAnotherModalOpens,
+    );
+
+    return () => {
+      window.removeEventListener(
+        RESTAURANT_COMMENT_MODAL_OPEN_EVENT,
+        closeWhenAnotherModalOpens,
+      );
+    };
+  }, [modalInstanceId]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+
+    document.body.style.overflow = "hidden";
+
+    const closeWithEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", closeWithEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+
+      window.removeEventListener("keydown", closeWithEscape);
+    };
+  }, [isOpen]);
 
   const myComment = useMemo(
     () =>
@@ -98,11 +150,17 @@ export default function RestaurantCommentsButton({
   };
 
   const openComments = async (): Promise<void> => {
-    try {
-      setIsOpen(true);
-      setIsLoading(true);
-      setMessage("");
+    window.dispatchEvent(
+      new CustomEvent<string>(RESTAURANT_COMMENT_MODAL_OPEN_EVENT, {
+        detail: modalInstanceId,
+      }),
+    );
 
+    setIsOpen(true);
+    setIsLoading(true);
+    setMessage("");
+
+    try {
       await refreshComments();
     } catch (error) {
       setMessage(getErrorMessage(error));
@@ -165,12 +223,162 @@ export default function RestaurantCommentsButton({
     }
   };
 
+  const modalElement = isOpen ? (
+    <div
+      className="restaurant-comments-modal-backdrop"
+      role="presentation"
+      onClick={event => {
+        if (event.target === event.currentTarget) {
+          closeComments();
+        }
+      }}
+    >
+      <section
+        className="restaurant-comments-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={`restaurant-comments-title-${modalInstanceId}`}
+        onClick={event => {
+          event.stopPropagation();
+        }}
+      >
+        <div className="restaurant-comments-modal__heading">
+          <div>
+            <p className="restaurant-comments-modal__eyebrow">TEAM MEMO</p>
+
+            <h2
+              className="restaurant-comments-modal__title"
+              id={`restaurant-comments-title-${modalInstanceId}`}
+            >
+              {placeName}
+            </h2>
+
+            <p className="restaurant-comments-modal__description">
+              팀원들이 남긴 짧은 식당 메모예요.
+            </p>
+          </div>
+
+          <button
+            className="restaurant-comments-modal__close-button"
+            type="button"
+            onClick={closeComments}
+            aria-label="한줄평 창 닫기"
+          >
+            ×
+          </button>
+        </div>
+
+        <div className="restaurant-comments-modal__body">
+          {isLoading ? (
+            <p className="restaurant-comments-modal__empty">
+              한줄평을 불러오는 중입니다.
+            </p>
+          ) : comments.length === 0 ? (
+            <p className="restaurant-comments-modal__empty">
+              아직 등록된 한줄평이 없습니다.
+              <br />첫 번째 메모를 남겨보세요.
+            </p>
+          ) : (
+            <div className="restaurant-comments-list">
+              {comments.map((restaurantComment: RestaurantComment) => (
+                <article
+                  className={`restaurant-comment-item ${
+                    restaurantComment.isMine
+                      ? "restaurant-comment-item--mine"
+                      : ""
+                  }`}
+                  key={restaurantComment.id}
+                >
+                  <div className="restaurant-comment-item__heading">
+                    <strong>
+                      {restaurantComment.isMine ? "내 한줄평" : "익명"}
+                    </strong>
+
+                    <span>
+                      {getCommentDateText(restaurantComment.updatedAt)}
+                    </span>
+                  </div>
+
+                  <p className="restaurant-comment-item__text">
+                    {restaurantComment.commentText}
+                  </p>
+
+                  {restaurantComment.isMine && (
+                    <button
+                      className="restaurant-comment-item__delete-button"
+                      type="button"
+                      onClick={() => {
+                        void deleteMyComment(restaurantComment);
+                      }}
+                      disabled={deletingCommentId !== null || isSaving}
+                    >
+                      {deletingCommentId === restaurantComment.id
+                        ? "삭제 중..."
+                        : "삭제"}
+                    </button>
+                  )}
+                </article>
+              ))}
+            </div>
+          )}
+
+          <div className="restaurant-comment-form">
+            <label
+              className="restaurant-comment-form__label"
+              htmlFor={`restaurant-comment-input-${modalInstanceId}`}
+            >
+              {myComment ? "내 한줄평 수정" : "한줄평 남기기"}
+            </label>
+
+            <textarea
+              className="restaurant-comment-form__textarea"
+              id={`restaurant-comment-input-${modalInstanceId}`}
+              value={commentText}
+              onChange={event => {
+                setCommentText(event.target.value);
+              }}
+              placeholder="예: 12시 전에 가야 자리가 있어요"
+              maxLength={100}
+              rows={3}
+              disabled={isLoading || isSaving}
+            />
+
+            <div className="restaurant-comment-form__footer">
+              <span className="restaurant-comment-form__count">
+                {commentText.length}/100
+              </span>
+
+              <button
+                className="restaurant-comment-form__save-button"
+                type="button"
+                onClick={() => {
+                  void saveComment();
+                }}
+                disabled={
+                  isLoading || isSaving || commentText.trim().length === 0
+                }
+              >
+                {isSaving ? "저장 중..." : myComment ? "수정" : "등록"}
+              </button>
+            </div>
+          </div>
+
+          {message && (
+            <p className="restaurant-comments-modal__message">{message}</p>
+          )}
+        </div>
+      </section>
+    </div>
+  ) : null;
+
   return (
     <>
       <button
         className="restaurant-comments-button"
         type="button"
-        onClick={() => {
+        onClick={event => {
+          event.stopPropagation();
+
           void openComments();
         }}
       >
@@ -182,150 +390,7 @@ export default function RestaurantCommentsButton({
         )}
       </button>
 
-      {isOpen && (
-        <div
-          className="restaurant-comments-modal-backdrop"
-          role="presentation"
-          onMouseDown={event => {
-            if (event.target === event.currentTarget) {
-              closeComments();
-            }
-          }}
-        >
-          <section
-            className="restaurant-comments-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={`restaurant-comments-title-${kakaoPlaceId}`}
-          >
-            <div className="restaurant-comments-modal__heading">
-              <div>
-                <p className="restaurant-comments-modal__eyebrow">TEAM MEMO</p>
-
-                <h2
-                  className="restaurant-comments-modal__title"
-                  id={`restaurant-comments-title-${kakaoPlaceId}`}
-                >
-                  {placeName}
-                </h2>
-
-                <p className="restaurant-comments-modal__description">
-                  팀원들이 남긴 짧은 식당 메모예요.
-                </p>
-              </div>
-
-              <button
-                className="restaurant-comments-modal__close-button"
-                type="button"
-                onClick={closeComments}
-                aria-label="한줄평 창 닫기"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="restaurant-comments-modal__body">
-              {isLoading ? (
-                <p className="restaurant-comments-modal__empty">
-                  한줄평을 불러오는 중입니다.
-                </p>
-              ) : comments.length === 0 ? (
-                <p className="restaurant-comments-modal__empty">
-                  아직 등록된 한줄평이 없습니다.
-                  <br />첫 번째 메모를 남겨보세요.
-                </p>
-              ) : (
-                <div className="restaurant-comments-list">
-                  {comments.map((restaurantComment: RestaurantComment) => (
-                    <article
-                      className={`restaurant-comment-item ${
-                        restaurantComment.isMine
-                          ? "restaurant-comment-item--mine"
-                          : ""
-                      }`}
-                      key={restaurantComment.id}
-                    >
-                      <div className="restaurant-comment-item__heading">
-                        <strong>
-                          {restaurantComment.isMine ? "내 한줄평" : "익명"}
-                        </strong>
-
-                        <span>
-                          {getCommentDateText(restaurantComment.updatedAt)}
-                        </span>
-                      </div>
-
-                      <p className="restaurant-comment-item__text">
-                        {restaurantComment.commentText}
-                      </p>
-
-                      {restaurantComment.isMine && (
-                        <button
-                          className="restaurant-comment-item__delete-button"
-                          type="button"
-                          onClick={() => {
-                            void deleteMyComment(restaurantComment);
-                          }}
-                          disabled={deletingCommentId !== null || isSaving}
-                        >
-                          {deletingCommentId === restaurantComment.id
-                            ? "삭제 중..."
-                            : "삭제"}
-                        </button>
-                      )}
-                    </article>
-                  ))}
-                </div>
-              )}
-
-              <div className="restaurant-comment-form">
-                <label
-                  className="restaurant-comment-form__label"
-                  htmlFor={`restaurant-comment-input-${kakaoPlaceId}`}
-                >
-                  {myComment ? "내 한줄평 수정" : "한줄평 남기기"}
-                </label>
-
-                <textarea
-                  className="restaurant-comment-form__textarea"
-                  id={`restaurant-comment-input-${kakaoPlaceId}`}
-                  value={commentText}
-                  onChange={event => {
-                    setCommentText(event.target.value);
-                  }}
-                  placeholder="예: 12시 전에 가야 자리가 있어요"
-                  maxLength={100}
-                  rows={3}
-                  disabled={isLoading || isSaving}
-                />
-
-                <div className="restaurant-comment-form__footer">
-                  <span className="restaurant-comment-form__count">
-                    {commentText.length}/100
-                  </span>
-
-                  <button
-                    className="restaurant-comment-form__save-button"
-                    type="button"
-                    onClick={() => {
-                      void saveComment();
-                    }}
-                    disabled={
-                      isLoading || isSaving || commentText.trim().length === 0
-                    }
-                  >
-                    {isSaving ? "저장 중..." : myComment ? "수정" : "등록"}
-                  </button>
-                </div>
-              </div>
-
-              {message && (
-                <p className="restaurant-comments-modal__message">{message}</p>
-              )}
-            </div>
-          </section>
-        </div>
-      )}
+      {modalElement && createPortal(modalElement, document.body)}
     </>
   );
 }

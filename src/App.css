@@ -38,7 +38,7 @@ button {
 
 .app {
   min-height: 100vh;
-  padding: 34px 20px 50px;
+  padding: 34px 20px 30px;
   background:
     radial-gradient(circle at 8% 10%, #ffd84d 0 7px, transparent 8px),
     radial-gradient(circle at 94% 18%, #4476ff 0 10px, transparent 11px),
@@ -455,8 +455,7 @@ button {
   font-weight: 900;
   transition:
     transform 120ms ease,
-    box-shadow 120ms ease,
-    background 120ms ease;
+    box-shadow 120ms ease;
 }
 
 .draw-button:hover:not(:disabled) {
@@ -1549,23 +1548,6 @@ button {
   }
 }
 
-.restaurant-comments-button {
-  display: inline-flex;
-  min-height: 38px;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 0 12px;
-  border: 2px solid var(--text);
-  border-radius: 10px;
-  background: #fff;
-  color: var(--text);
-  font: inherit;
-  font-size: 12px;
-  font-weight: 950;
-  cursor: pointer;
-}
-
 .restaurant-comments-button__count {
   display: inline-flex;
   min-width: 20px;
@@ -1577,27 +1559,6 @@ button {
   background: var(--red);
   color: #fff;
   font-size: 10px;
-}
-
-.restaurant-comments-modal-backdrop {
-  position: fixed;
-  z-index: 1000;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  padding: 20px;
-  background: rgba(20, 20, 20, 0.58);
-}
-
-.restaurant-comments-modal {
-  width: min(560px, 100%);
-  max-height: calc(100vh - 40px);
-  overflow: hidden;
-  border: 3px solid var(--text);
-  border-radius: 22px;
-  background: #fffdf5;
-  box-shadow: 8px 8px 0 var(--text);
-  z-index: 999;
 }
 
 .restaurant-comments-modal__heading {
@@ -1656,13 +1617,6 @@ button {
   gap: 10px;
 }
 
-.restaurant-comment-item {
-  padding: 14px;
-  border: 2px solid var(--text);
-  border-radius: 14px;
-  background: #fff;
-}
-
 .restaurant-comment-item--mine {
   background: #fff8ce;
 }
@@ -1697,12 +1651,6 @@ button {
   font-weight: 900;
   text-decoration: underline;
   cursor: pointer;
-}
-
-.restaurant-comment-form {
-  margin-top: 18px;
-  padding-top: 18px;
-  border-top: 2px solid var(--text);
 }
 
 .restaurant-comment-form__label {
@@ -1755,4 +1703,194 @@ button {
 .menu-item__controls,
 .archived-menu-item__actions {
   flex-wrap: wrap;
+}
+
+/* 큰 화면: 추첨 결과 패널 너비 축소 */
+@media (min-width: 1200px) {
+  .content {
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(320px, 390px);
+  }
+
+  .result-panel {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* 작은 화면: 후보 버튼 배치 */
+@media (max-width: 680px) {
+  .menu-item__controls {
+    display: grid;
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(0, 1fr);
+    gap: 8px;
+    width: 100%;
+  }
+
+  /* 가중치 선택은 첫 줄 전체 */
+  .menu-item__controls .weight-select {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  /* 한줄평과 카카오맵은 두 번째 줄 반반 */
+  .menu-item__controls .restaurant-comments-button,
+  .menu-item__controls .menu-item__kakao-map-button {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    text-align: center;
+  }
+
+  /* 오늘 메뉴 버튼은 항상 맨 아래 전체 */
+  .menu-item__controls .menu-item__today-button {
+    grid-column: 1 / -1;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* 근처 식당 검색 결과 버튼 배치 */
+  .restaurant-search-item__actions {
+    display: grid;
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(0, 1fr);
+    gap: 8px;
+    width: 100%;
+  }
+
+  /* 한줄평과 카카오맵은 첫 줄 반반 */
+  .restaurant-search-item__actions .restaurant-comments-button,
+  .restaurant-search-item__actions .restaurant-search-item__map-link {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    text-align: center;
+  }
+
+  /* 후보 추가 버튼은 항상 맨 아래 전체 */
+  .restaurant-search-item__actions .restaurant-search-item__add-button {
+    grid-column: 1 / -1;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* 다시 먹어볼까요 버튼들도 모바일에서 정돈 */
+  .archived-menu-item__actions {
+    display: grid;
+    grid-template-columns:
+      minmax(0, 1fr)
+      auto;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .archived-menu-item__actions .restaurant-comments-button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .archived-menu-item__restore-button {
+    width: 100%;
+  }
+}
+
+/* 큰 화면: 추첨 결과 패널 너비 축소 */
+@media (min-width: 1200px) {
+  .content {
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(320px, 390px);
+  }
+
+  .result-panel {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* 가장 작은 화면: 버튼 위치 강제 고정 */
+@media (max-width: 730px) {
+  /* 근처 식당 검색 결과 */
+  .restaurant-search-item__actions {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    grid-template-areas:
+      "comment map"
+      "add add" !important;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .restaurant-search-item__actions .restaurant-comments-button {
+    grid-area: comment !important;
+    width: 100%;
+    min-width: 0;
+    order: initial !important;
+  }
+
+  .restaurant-search-item__actions .restaurant-search-item__map-link {
+    grid-area: map !important;
+    width: 100%;
+    min-width: 0;
+    order: initial !important;
+    box-sizing: border-box;
+    text-align: center;
+  }
+
+  .restaurant-search-item__actions .restaurant-search-item__add-button {
+    grid-area: add !important;
+    width: 100%;
+    min-width: 0;
+    order: initial !important;
+    box-sizing: border-box;
+  }
+}
+
+@media (max-width: 680px) {
+  .menu-item__controls {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    grid-template-areas:
+      "weight weight"
+      "comment map"
+      "today today" !important;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .menu-item__controls .weight-select {
+    grid-area: weight !important;
+    width: 100%;
+    min-width: 0;
+    order: initial !important;
+  }
+
+  .menu-item__controls .restaurant-comments-button {
+    grid-area: comment !important;
+    width: 100%;
+    min-width: 0;
+    order: initial !important;
+  }
+
+  .menu-item__controls .menu-item__kakao-map-button {
+    grid-area: map !important;
+    width: 100%;
+    min-width: 0;
+    order: initial !important;
+    box-sizing: border-box;
+    text-align: center;
+  }
+
+  .menu-item__controls .menu-item__today-button {
+    grid-area: today !important;
+    width: 100%;
+    min-width: 0;
+    order: initial !important;
+  }
 }

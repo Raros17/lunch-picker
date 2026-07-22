@@ -284,12 +284,4 @@
     max-height: calc(100vh - 190px);
     padding: 16px;
   }
-
-  .restaurant-search-item__actions {
-    flex-wrap: wrap;
-  }
-
-  .restaurant-search-item__actions .restaurant-comments-button {
-    flex: 1 1 100%;
-  }
 }
